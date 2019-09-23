@@ -27,7 +27,7 @@ vars_cc = [
 #    'vel_disp'
 ]
 
-def write_cc_to_disk(step, cc):
+def write_dict_to_disk(step, cc):
     outfile = cc_output_dir + '09_03_2019.AQ.{}.corepropertiesextend.hdf5'.format(step)
 
     f = h5py.File(outfile, 'w')
@@ -42,23 +42,62 @@ def fname_cc(step):
 
 if __name__ == '__main__':
     
-    for step in tqdm(steps[:20]):
-        # read in cc for step
+    cc = {}
+    cc_prev = {}
+    
+    for step in tqdm(steps[:30]):
+        # Read in cc for step
         cc = { v:gio.gio_read(fname_cc(step), v)[0] for v in vars_cc }
         
-        noncentrals_mask = cc['central'] != 1
-        numSatellites = np.sum(noncentrals_mask)
+        satellites_mask = cc['central'] == 0
+        centrals_mask = cc['central'] == 1
+        assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_mass'])
+        numSatellites = np.sum(satellites_mask)
         
-        # verify there are no satellites at first step
+        # Verify there are no satellites at first step
         if step == steps[0]:
-            assert numSatellites == 0
+            assert numSatellites == 0, 'Satellites found at first step.'
 
-        # add column for m_evolved and initialize to 0
+        # Add column for m_evolved and initialize to 0
         cc['m_evolved'] = np.zeros_like(cc['infall_mass'])
         
-        # if there are satellites (not applicable for first step)
+        # If there are satellites (not applicable for first step)
         if numSatellites != 0:
-            pass
+            
+            # Match satellites to prev step cores using core tag.
+            vals, idx1, idx2 = np.intersect1d( cc['core_tag'][satellites_mask], cc_prev['core_tag'], return_indices=True )
+
+            # assert len(vals) == len(cc['core_tag'][satellites_mask]), 'All cores from prev step did not carry over.'
+            # assert len(cc['core_tag'][satellites_mask]) == len(np.unique(cc['core_tag'][satellites_mask])), 'Satellite core tags not unique for this time step.'
+            
+            # Set m_evolved of all satellites that have core tag match on prev step to m_evolved of prev step.
+            cc['m_evolved'][satellites_mask][idx1] = cc_prev['m_evolved'][idx2]
+            
+            # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
+            m = (cc['m_evolved'][satellites_mask] == 0)*cc['infall_mass'][satellites_mask] + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
+
+            # Match satellites tni with centrals tni.
+            vals2, idx3, idx4 = np.intersect1d( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask], return_indices=True)
+
+            # Unique satellites tni array with inverse indices
+            vals3, idx_inv = np.unique(cc['tree_node_index'][satellites_mask], return_inverse=True)
+            
+            assert np.array_equal(vals2, vals3), "All satellites don't have a central match."
+            assert np.array_equal(vals3[idx_inv], cc['tree_node_index'][satellites_mask]), 'np.unique inverse indices: original array recreation failure'
+            
+            assert np.array_equal(cc['tree_node_index'][centrals_mask][idx4], np.sort(cc['tree_node_index'][centrals_mask][idx4])), 'Centrals with satellites: array sorting failure'
+
+
+            # Initialize M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
+            M = cc['infall_mass'][centrals_mask][idx4][idx_inv]
+            assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
+
+
+            cc['m_evolved'][satellites_mask] = M#m/M
+
         
         # write output to disk
-        write_cc_to_disk(step, cc)
+        write_dict_to_disk(step, cc)
+        
+        cc_prev = { k:v.copy() for k,v in cc.items() }
+        

@@ -43,5 +43,22 @@ def fname_cc(step):
 if __name__ == '__main__':
     
     for step in tqdm(steps[:20]):
+        # read in cc for step
         cc = { v:gio.gio_read(fname_cc(step), v)[0] for v in vars_cc }
+        
+        noncentrals_mask = cc['central'] != 1
+        numSatellites = np.sum(noncentrals_mask)
+        
+        # verify there are no satellites at first step
+        if step == steps[0]:
+            assert numSatellites == 0
+
+        # add column for m_evolved and initialize to 0
+        cc['m_evolved'] = np.zeros_like(cc['infall_mass'])
+        
+        # if there are satellites (not applicable for first step)
+        if numSatellites != 0:
+            pass
+        
+        # write output to disk
         write_cc_to_disk(step, cc)

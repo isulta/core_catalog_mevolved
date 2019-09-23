@@ -1,7 +1,9 @@
 import numpy as np
 import genericio as gio
 import h5py
-from tqdm import tqdm #progress bar
+import subhalo_mass_loss_model as SHMLM
+
+from tqdm import tqdm # progress bar
 
 cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
 cc_output_dir = '/home/isultan/projects/halomassloss/ccextend/output/'
@@ -45,7 +47,7 @@ if __name__ == '__main__':
     cc = {}
     cc_prev = {}
     
-    for step in tqdm(steps[:30]):
+    for step in tqdm(steps):
         # Read in cc for step
         cc = { v:gio.gio_read(fname_cc(step), v)[0] for v in vars_cc }
         
@@ -92,8 +94,8 @@ if __name__ == '__main__':
             M = cc['infall_mass'][centrals_mask][idx4][idx_inv]
             assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
 
-
-            cc['m_evolved'][satellites_mask] = M#m/M
+            # Compute m_evolved of satellites according to SHMLModel.
+            cc['m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=step, step_prev=steps[steps.index(step)-1], A=0.86, zeta=0.07)
 
         
         # write output to disk

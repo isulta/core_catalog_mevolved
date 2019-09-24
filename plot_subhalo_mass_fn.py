@@ -20,7 +20,7 @@ def plt_latex():
 
 def SHMF_plot(outfile, M1, M2, bins, step):
 
-	# Load z=0 extended core catalog
+	# Load extended core catalog
 	cc = read_dict_from_disk(outfile)
 
 	satellites_mask = cc['central'] == 0

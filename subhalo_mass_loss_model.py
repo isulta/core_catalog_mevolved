@@ -6,7 +6,7 @@ THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.71
 OMEGA_0 = 1.0
 cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
-cc_output_dir = '/home/isultan/projects/halomassloss/ccextend/output/'
+cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output/'
 
 import numpy as np
 import os
@@ -49,6 +49,7 @@ def tau(z, A):
 # alternate method to compute lookback time
 def delta_t_quad(z):
     # returns in units h^-1 Gyr 
+    from scipy.integrate import quad
     return quad( lambda z_: THUBBLE/(E(z_)*(1+z_)), 0, z )[0]
 
 def m_evolved(m0, M0, step, step_prev, A=0.86, zeta=0.07):

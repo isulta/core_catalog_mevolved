@@ -11,22 +11,22 @@ cc_output_dir = SHMLM.cc_output_dir
 steps = SHMLM.steps
 
 vars_cc = [
-#    'fof_halo_tag',
+   'fof_halo_tag',
    'core_tag', 
    'tree_node_index', 
-#     'x', 
-#     'y', 
-#     'z', 
-#     'vx', 
-#     'vy', 
-#     'vz', 
-#     'radius', 
+    'x', 
+    'y', 
+    'z', 
+    'vx', 
+    'vy', 
+    'vz', 
+    'radius', 
     'infall_mass', 
-#     'infall_step', 
-#    'infall_fof_halo_tag',
-#    'infall_tree_node_index',
+    'infall_step', 
+   'infall_fof_halo_tag',
+   'infall_tree_node_index',
    'central', 
-#    'vel_disp'
+   'vel_disp'
 ]
 
 def write_dict_to_disk(step, cc):
@@ -42,8 +42,7 @@ def write_dict_to_disk(step, cc):
 def fname_cc(step):
     return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
 
-if __name__ == '__main__':
-    
+def create_core_catalog_mevolved():
     cc = {}
     cc_prev = {}
     
@@ -53,7 +52,7 @@ if __name__ == '__main__':
         
         satellites_mask = cc['central'] == 0
         centrals_mask = cc['central'] == 1
-        assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_mass'])
+        assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_mass']), 'central flag not 0 or 1.'
         numSatellites = np.sum(satellites_mask)
         
         # Verify there are no satellites at first step
@@ -102,4 +101,9 @@ if __name__ == '__main__':
         write_dict_to_disk(step, cc)
         
         cc_prev = { k:v.copy() for k,v in cc.items() }
+
+
+if __name__ == '__main__':
+    create_core_catalog_mevolved()
+    
         

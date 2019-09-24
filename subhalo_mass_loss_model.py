@@ -5,29 +5,29 @@ OMEGA_L = 0.7352073001388613
 THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.71
 OMEGA_0 = 1.0
+cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
+cc_output_dir = '/home/isultan/projects/halomassloss/ccextend/output/'
 
 import numpy as np
+import os
 
 # step to z/lookback time cache
 from cosmo import StepZ
-stepz = StepZ(sim_name='AlphaQ')
+stepz_converter = StepZ(sim_name='AlphaQ')
 
 from astropy import cosmology
 from astropy.cosmology import FlatLambdaCDM
-cosmo = FlatLambdaCDM(H0=71, Om0=0.265, Tcmb0=0, Neff=3.04, m_nu=None, Ob0=0.0448)
+cosmoFLCDM = FlatLambdaCDM(H0=71, Om0=0.265, Tcmb0=0, Neff=3.04, m_nu=None, Ob0=0.0448)
 
-headers_fname = '../ccheaders.txt'
-steps = []
+steps = sorted([int(i.split('.')[2]) for i in os.listdir(cc_data_dir) if '#' not in i])
 step2z = {}
 step2lookback = {} #in h^-1 Gyr
-for fname in open(headers_fname, 'r'):
-    step = int(fname.strip().split('.')[2])
-    steps.append(step)
-    z = stepz.get_z(step)
+for step in steps:
+    z = stepz_converter.get_z(step)
     if step == 499:
         z = 0.0
     step2z[step] = z
-    step2lookback[step] = cosmo.lookback_time(z).value * LITTLEH
+    step2lookback[step] = cosmoFLCDM.lookback_time(z).value * LITTLEH
 
 # E(z) = H(z)/H0
 def E(z):
@@ -51,7 +51,7 @@ def delta_t_quad(z):
     # returns in units h^-1 Gyr 
     return quad( lambda z_: THUBBLE/(E(z_)*(1+z_)), 0, z )[0]
 
-def m_evolved(m0, M0, step, step_prev, A, zeta):
+def m_evolved(m0, M0, step, step_prev, A=0.86, zeta=0.07):
     z = step2z[step]
     delta_t = step2lookback[step_prev] - step2lookback[step]
 

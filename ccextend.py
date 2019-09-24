@@ -5,10 +5,10 @@ import subhalo_mass_loss_model as SHMLM
 
 from tqdm import tqdm # progress bar
 
-cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
-cc_output_dir = '/home/isultan/projects/halomassloss/ccextend/output/'
+cc_data_dir = SHMLM.cc_data_dir
+cc_output_dir = SHMLM.cc_output_dir
 
-steps = [43, 44, 45, 46, 48, 49, 50, 52, 53, 54, 56, 57, 59, 60, 62, 63, 65, 67, 68, 70, 72, 74, 76, 77, 79, 81, 84, 86, 88, 90, 92, 95, 97, 100, 102, 105, 107, 110, 113, 116, 119, 121, 124, 127, 131, 134, 137, 141, 144, 148, 151, 155, 159, 163, 167, 171, 176, 180, 184, 189, 194, 198, 203, 208, 213, 219, 224, 230, 235, 241, 247, 253, 259, 266, 272, 279, 286, 293, 300, 307, 315, 323, 331, 338, 347, 355, 365, 373, 382, 392, 401, 411, 421, 432, 442, 453, 464, 475, 487, 499]
+steps = SHMLM.steps
 
 vars_cc = [
 #    'fof_halo_tag',
@@ -95,7 +95,7 @@ if __name__ == '__main__':
             assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
 
             # Compute m_evolved of satellites according to SHMLModel.
-            cc['m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=step, step_prev=steps[steps.index(step)-1], A=0.86, zeta=0.07)
+            cc['m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=step, step_prev=steps[steps.index(step)-1])
 
         
         # write output to disk

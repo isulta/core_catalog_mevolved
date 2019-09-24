@@ -1,5 +1,5 @@
 # core_catalog_mevolved
-Appends m_evolved column to given core catalog and saves output core catalog in HDF5 format. m_evolved is initialized as 0. and tracks halo mass loss after core infall according to given subhalo mass loss model. **Currently configured for AlphaQ core catalog.**
+Appends m_evolved column to given core catalog and saves output core catalog in HDF5 format. m_evolved is initialized as 0 and tracks halo mass loss after core infall according to given subhalo mass loss model. **Currently configured for AlphaQ core catalog.**
 
 ## Usage
 
@@ -7,7 +7,7 @@ Appends m_evolved column to given core catalog and saves output core catalog in 
 1. Change cosmology parameters, `cc_data_dir`, and `cc_output_dir` in `subhalo_mass_loss_model.py`
 2. Create empty directory `cc_output_dir`
 
-`python ccextend.py`
+`python cc_generate.py`
 
 ### Plot subhalo mass function using m_evolved
 `python plot_subhalo_mass_fn.py`

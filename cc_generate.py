@@ -100,7 +100,7 @@ def create_core_catalog_mevolved():
         # write output to disk
         write_dict_to_disk(step, cc)
         
-        cc_prev = { k:v.copy() for k,v in cc.items() }
+        cc_prev = { k:cc[k].copy() for k in ['core_tag', 'm_evolved'] }
 
 
 if __name__ == '__main__':

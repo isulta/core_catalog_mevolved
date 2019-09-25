@@ -23,10 +23,10 @@ vars_cc = [
     'radius', 
     'infall_mass', 
     'infall_step', 
-   'infall_fof_halo_tag',
-   'infall_tree_node_index',
-   'central', 
-   'vel_disp'
+    'infall_fof_halo_tag',
+    'infall_tree_node_index',
+    'central', 
+    'vel_disp'
 ]
 
 def write_dict_to_disk(step, cc):
@@ -42,6 +42,8 @@ def write_dict_to_disk(step, cc):
 def fname_cc(step):
     return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
 
+# Appends mevolved to core catalog and saves output in HDF5.
+# Works  by computing mevolved for step+1 at each step and saving that in memory.
 def create_core_catalog_mevolved():
     cc = {}
     cc_prev = {}
@@ -52,7 +54,7 @@ def create_core_catalog_mevolved():
         
         satellites_mask = cc['central'] == 0
         centrals_mask = cc['central'] == 1
-        assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_mass']), 'central flag not 0 or 1.'
+        # assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_mass']), 'central flag not 0 or 1.'
         numSatellites = np.sum(satellites_mask)
         
         # Verify there are no satellites at first step
@@ -71,11 +73,14 @@ def create_core_catalog_mevolved():
             # assert len(vals) == len(cc['core_tag'][satellites_mask]), 'All cores from prev step did not carry over.'
             # assert len(cc['core_tag'][satellites_mask]) == len(np.unique(cc['core_tag'][satellites_mask])), 'Satellite core tags not unique for this time step.'
             
-            # Set m_evolved of all satellites that have core tag match on prev step to m_evolved of prev step.
-            cc['m_evolved'][satellites_mask][idx1] = cc_prev['m_evolved'][idx2]
-            
+            # Set m_evolved of all satellites that have core tag match on prev step to next_m_evolved of prev step.
+            cc['m_evolved'][satellites_mask][idx1] = cc_prev['next_m_evolved'][idx2]
+
             # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
             m = (cc['m_evolved'][satellites_mask] == 0)*cc['infall_mass'][satellites_mask] + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
+
+            # Set m_evolved of satellites with m_evolved=0 to infall mass.
+            cc['m_evolved'][satellites_mask] = m.copy()
 
             # Match satellites tni with centrals tni.
             vals2, idx3, idx4 = np.intersect1d( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask], return_indices=True)
@@ -92,15 +97,22 @@ def create_core_catalog_mevolved():
             # Initialize M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
             M = cc['infall_mass'][centrals_mask][idx4][idx_inv]
             assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
-
-            # Compute m_evolved of satellites according to SHMLModel.
-            cc['m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=step, step_prev=steps[steps.index(step)-1])
-
+         
         
-        # write output to disk
+        # Write output to disk
         write_dict_to_disk(step, cc)
-        
-        cc_prev = { k:cc[k].copy() for k in ['core_tag', 'm_evolved'] }
+
+       # Compute m_evolved of satellites according to SHMLModel for NEXT time step and save as cc_prev['next_m_evolved'] in memory.
+       # Mass loss assumed to begin at step AFTER infall detected.
+        if step != steps[-1]:
+            cc_prev = { 'core_tag':cc['core_tag'].copy() }
+            next_m_evolved = np.zeros_like(cc['infall_mass'])
+            
+            if numSatellites != 0: # If there are satellites (not applicable for first step)
+                next_m_evolved[satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step)
+            
+            cc_prev['next_m_evolved'] = next_m_evolved
+
 
 
 if __name__ == '__main__':

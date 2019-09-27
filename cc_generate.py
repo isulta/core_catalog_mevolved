@@ -72,15 +72,16 @@ def create_core_catalog_mevolved():
 
             # assert len(vals) == len(cc['core_tag'][satellites_mask]), 'All cores from prev step did not carry over.'
             # assert len(cc['core_tag'][satellites_mask]) == len(np.unique(cc['core_tag'][satellites_mask])), 'Satellite core tags not unique for this time step.'
-            
+
             # Set m_evolved of all satellites that have core tag match on prev step to next_m_evolved of prev step.
-            cc['m_evolved'][satellites_mask][idx1] = cc_prev['next_m_evolved'][idx2]
+            # DOUBLE MASK ASSIGNMENT: cc['m_evolved'][satellites_mask][idx1] = cc_prev['next_m_evolved'][idx2] 
+            cc['m_evolved'][ np.flatnonzero(satellites_mask)[idx1] ] = cc_prev['next_m_evolved'][idx2]
 
             # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
             m = (cc['m_evolved'][satellites_mask] == 0)*cc['infall_mass'][satellites_mask] + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
 
             # Set m_evolved of satellites with m_evolved=0 to infall mass.
-            cc['m_evolved'][satellites_mask] = m.copy()
+            cc['m_evolved'][satellites_mask] = m
 
             # Match satellites tni with centrals tni.
             vals2, idx3, idx4 = np.intersect1d( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask], return_indices=True)
@@ -106,16 +107,12 @@ def create_core_catalog_mevolved():
        # Mass loss assumed to begin at step AFTER infall detected.
         if step != steps[-1]:
             cc_prev = { 'core_tag':cc['core_tag'].copy() }
-            next_m_evolved = np.zeros_like(cc['infall_mass'])
+            cc_prev['next_m_evolved'] = np.zeros_like(cc['infall_mass'])
             
             if numSatellites != 0: # If there are satellites (not applicable for first step)
-                next_m_evolved[satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step)
-            
-            cc_prev['next_m_evolved'] = next_m_evolved
+                cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step)
 
 
 
 if __name__ == '__main__':
     create_core_catalog_mevolved()
-    
-        

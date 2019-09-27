@@ -58,4 +58,4 @@ def SHMF_plot(outfile, M1, M2, bins, step):
 	plt.show()
 
 if __name__ == '__main__':
-	SHMF_plot(outfile='output/09_03_2019.AQ.499.corepropertiesextend.hdf5', M1=10**14.0, M2=10**14.5, bins=500, step=499)
+	SHMF_plot(outfile='output/09_03_2019.AQ.499.corepropertiesextend.hdf5', M1=10**14.0, M2=10**15.0, bins=500, step=499)

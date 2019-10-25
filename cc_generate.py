@@ -111,6 +111,7 @@ def create_core_catalog_mevolved():
             
             if numSatellites != 0: # If there are satellites (not applicable for first step)
                 cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step)
+                #cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=23.7, zeta=0.36)
 
 
 

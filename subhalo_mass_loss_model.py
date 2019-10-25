@@ -1,10 +1,10 @@
-PARTICLES100MASS = 1.09e11 #h^-1 Msun
+PARTICLES100MASS = 1.148276e11 #h^-1 Msun
 BOXSIZE = 256
 OMEGA_M = 0.2647926998611387
 OMEGA_L = 0.7352073001388613
 THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.71
-OMEGA_0 = 1.0
+OMEGA_0 = OMEGA_M #1.0
 cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
 cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output/'
 

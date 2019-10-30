@@ -44,7 +44,7 @@ def fname_cc(step):
 
 # Appends mevolved to core catalog and saves output in HDF5.
 # Works  by computing mevolved for step+1 at each step and saving that in memory.
-def create_core_catalog_mevolved():
+def create_core_catalog_mevolved(virialFlag = True):
     cc = {}
     cc_prev = {}
     
@@ -52,6 +52,10 @@ def create_core_catalog_mevolved():
         # Read in cc for step
         cc = { v:gio.gio_read(fname_cc(step), v)[0] for v in vars_cc }
         
+        if virialFlag:
+            # Convert all mass to virial
+            cc['infall_mass'] = SHMLM.m_vir(cc['infall_mass'], step)
+
         satellites_mask = cc['central'] == 0
         centrals_mask = cc['central'] == 1
         # assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_mass']), 'central flag not 0 or 1.'
@@ -79,6 +83,8 @@ def create_core_catalog_mevolved():
 
             # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
             m = (cc['m_evolved'][satellites_mask] == 0)*cc['infall_mass'][satellites_mask] + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
+            # Initialize m array (corresponds with cc[satellites_mask]) to be either virial_infall_mass (step after infall) or m_evolved (subsequent steps).
+            #m = (cc['m_evolved'][satellites_mask] == 0)*SHMLM.m_vir(cc['infall_mass'][satellites_mask], step) + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
 
             # Set m_evolved of satellites with m_evolved=0 to infall mass.
             cc['m_evolved'][satellites_mask] = m

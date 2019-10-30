@@ -6,7 +6,7 @@ THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.71
 OMEGA_0 = OMEGA_M #1.0
 cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
-cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output/'
+cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_omega0/'
 
 import numpy as np
 import os
@@ -51,6 +51,11 @@ def delta_t_quad(z):
     # returns in units h^-1 Gyr 
     from scipy.integrate import quad
     return quad( lambda z_: THUBBLE/(E(z_)*(1+z_)), 0, z )[0]
+
+# convert m200c (c is crticial density at z) to virial mass
+def m_vir(m200c, step):
+    z = step2z[step]
+    return m200c * (delta_vir(z)/200.) * (0.746*(delta_vir(z)/delta_vir(0))**0.395)**-3
 
 def m_evolved(m0, M0, step, step_prev, A=0.86, zeta=0.07):
     z = step2z[step]

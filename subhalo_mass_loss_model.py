@@ -5,8 +5,8 @@ OMEGA_L = 0.7352073001388613
 THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.71
 OMEGA_0 = OMEGA_M #1.0
-cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog/'
-cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_omega0/'
+cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog_merg/'
+cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_merg_fof/'
 
 import numpy as np
 import os
@@ -58,6 +58,9 @@ def m_vir(m200c, step):
     return m200c * (delta_vir(z)/200.) * (0.746*(delta_vir(z)/delta_vir(0))**0.395)**-3
 
 def m_evolved(m0, M0, step, step_prev, A=0.86, zeta=0.07):
+    # A conversion to fix delta_vir(0) != 178 discrepancy
+    A = A * (delta_vir(0)/178.)**0.5
+
     z = step2z[step]
     delta_t = step2lookback[step_prev] - step2lookback[step]
 

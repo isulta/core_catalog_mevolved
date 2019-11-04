@@ -29,8 +29,8 @@ for step in steps:
     step2z[step] = z
     step2lookback[step] = cosmoFLCDM.lookback_time(z).value * LITTLEH
 
-# E(z) = H(z)/H0
 def E(z):
+    """E(z) = H(z)/H0"""
     return (OMEGA_M*((1+z)**3) + OMEGA_L)**0.5
 
 def Omega(z):
@@ -43,17 +43,19 @@ def delta_vir(z):
     return 18*np.pi**2 + 82*x(z) - 39*x(z)**2
 
 def tau(z, A):
-    # returns in units h^-1 Gyr
+    """returns in units h^-1 Gyr"""
     return 1.628/A * ( delta_vir(z)/delta_vir(0) )**(-0.5) * E(z)**(-1)
 
-# alternate method to compute lookback time
 def delta_t_quad(z):
-    # returns in units h^-1 Gyr 
+    """
+    Alternate method to compute lookback time.
+    Returns in units h^-1 Gyr.
+    """ 
     from scipy.integrate import quad
     return quad( lambda z_: THUBBLE/(E(z_)*(1+z_)), 0, z )[0]
 
-# convert m200c (c is crticial density at z) to virial mass
 def m_vir(m200c, step):
+    """Convert m200c (c is crticial density at z) to virial mass."""
     z = step2z[step]
     return m200c * (delta_vir(z)/200.) * (0.746*(delta_vir(z)/delta_vir(0))**0.395)**-3
 

@@ -44,9 +44,11 @@ def write_dict_to_disk(step, cc):
 def fname_cc(step):
     return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
 
-# Appends mevolved to core catalog and saves output in HDF5.
-# Works  by computing mevolved for step+1 at each step and saving that in memory.
 def create_core_catalog_mevolved(virialFlag):
+    """
+    Appends mevolved to core catalog and saves output in HDF5.
+    Works  by computing mevolved for step+1 at each step and saving that in memory.
+    """
     cc = {}
     cc_prev = {}
     

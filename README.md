@@ -9,16 +9,17 @@ Appends m_evolved column to given core catalog and saves output core catalog in 
 
 `python cc_generate.py`
 
-### Plot subhalo mass function using m_evolved
-`python plot_subhalo_mass_fn.py`
+### Plot mass functions
+See `Notebooks/` for useful Jupyter notebooks. Helper functions for plotting subhalo, core evolved mass, and core unevolved mass functions are provided in `plot_subhalo_mass_fn.py`.
 
 ## Subhalo mass loss model
 Currently using [Jiang and van den Bosch 2016](https://academic.oup.com/mnras/article/458/3/2848/2589187) model. A different model can be specifed by modifying `subhalo_mass_loss_model.py`.
 
 ## Dependencies
-- [cosmo.py](https://github.com/dkorytov/dtk/blob/master/cosmo.py) (included with repo)
+- dtk: [cosmo.py](https://github.com/dkorytov/dtk/blob/master/cosmo.py) (included with repo)
 - Astropy
 - H5Py
 - [tqdm](https://github.com/tqdm/tqdm) (for progress bar)
 - Numpy
 - Matplotlib
+- itk (for plotting mass functions with `plot_subhalo_mass_fn.py`)

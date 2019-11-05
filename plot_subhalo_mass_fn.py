@@ -100,6 +100,16 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False):
     
     return plot_arr, nHalo
 
+def plotCMF(outfile, M1, M2, s1, returnUnevolved, label, r):
+    """Plot log/log plot of cores mass function (evolved or unevolved, given by `returnUnevolved`) with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
+    parr, nH = CMF(outfile, M1, M2, s1, returnUnevolved)
+    hist(np.log10(parr), bins=100, normed=True, plotFlag=True, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=True)
+
+def plotSHMF(M1, M2, r, label='subhalos'):
+    """Plot log/log plot of subhalo mass function with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
+    shmf, nH = SHMF(M1, M2)
+    hist(np.log10(shmf), bins=100, normed=True, normBinsize=True, normCnts=False, normLogCnts=True, normScalar=nH, plotFlag=True, label='subhalos', alpha=1, range=r)
+
 def SHMF_plot(outfile, M1, M2, bins, step):
 	# TODO plot histogram
     pass

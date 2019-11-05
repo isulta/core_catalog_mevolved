@@ -19,7 +19,8 @@ Currently using [Jiang and van den Bosch 2016](https://academic.oup.com/mnras/ar
 - dtk: [cosmo.py](https://github.com/dkorytov/dtk/blob/master/cosmo.py) (included with repo)
 - Astropy
 - H5Py
+- [GenericIO](https://trac.alcf.anl.gov/projects/genericio)
+- itk (for plotting mass functions with `plot_subhalo_mass_fn.py`)
 - [tqdm](https://github.com/tqdm/tqdm) (for progress bar)
 - Numpy
 - Matplotlib
-- itk (for plotting mass functions with `plot_subhalo_mass_fn.py`)

@@ -30,6 +30,7 @@ def SHMF(M1, M2):
     """Returns 'subhalo mass function' m/M for M in [`M1`,`M2`]."""
     subhalos_read()
     assert np.all(np.isin(sh['fof_halo_tag'], mt['fof_halo_tag'])), 'Every subhalo does not have corresponding fof_halo_tag in merger tree.'
+    assert len(np.unique(mt['fof_halo_tag']))==len(mt['fof_halo_tag']), 'Duplicate fof_halo_tag(s) found in merger tree.'
 
     # Match subhalos with mt nodes
     _, _, idx2 = np.intersect1d( sh['fof_halo_tag'], mt['fof_halo_tag'], assume_unique=False, return_indices=True)
@@ -43,7 +44,8 @@ def SHMF(M1, M2):
     # m/M with mask: M in [M1,M2] with central subhalos (subhalo tag == 0) removed
     mask = (M1<=M)&(M<=M2)&(sh['subhalo_tag']!=0)
     plot_arr = (sh['subhalo_mass']/M)[mask]
-    nH = np.sum( np.isin(mt['fof_halo_tag'], sh['fof_halo_tag'][mask]) )
+    # nH = np.sum( np.isin(mt['fof_halo_tag'], sh['fof_halo_tag'][mask]) ) #all halos with at least 1 subhalo
+    nH = np.sum( (M1 <= mt['fof_halo_mass'])&(mt['fof_halo_mass']<=M2) )
     
     return plot_arr, nH
 

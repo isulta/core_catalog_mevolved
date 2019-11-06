@@ -49,24 +49,27 @@ def SHMF(M1, M2):
     
     return plot_arr, nH
 
-def CMF(outfile, M1, M2, s1=False, returnUnevolved=False):
+def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=False, A=None):
     """Generate cores array m/M for mass function plot.
     
     Arguments:
         outfile {string} -- HDF5 core catalog file with 'coredata' dir.
         M1, M2 {float} -- Host halos with M in mass range [M1, M2], where M is central's `infall_mass` from core catalog.
+        cc {dict} -- If given, `outfile` is not read and `cc` is used instead.
     
     Keyword Arguments:
         s1 {bool} -- If true, consider only 1st order substructure (i.e. subhalos). (default: {False})
         returnUnevolved {bool} -- If true, use unevolved m (i.e. core `infall_mass`) (default: {False})
+        returnZeta0 {bool} -- If true, does fast mass evolution for the case of zeta=0, A=`A`.
     
     Returns:
         np 1d array -- m/M array with appropriate mask
         integer -- number of host halos (M)
     """
 
-    # Load extended core catalog
-    cc = h5_read_dict(outfile, 'coredata')
+    if not cc:
+        # Load extended core catalog
+        cc = h5_read_dict(outfile, 'coredata')
 
     satellites_mask = cc['central'] == 0
     centrals_mask = cc['central'] == 1
@@ -90,8 +93,10 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False):
     if s1:
         mask = np.intersect1d( mask, np.flatnonzero(cc['host_core'][satellites_mask]==Coretag) )
     
-    # m/M array for SHMF
+    # m/M array for CMF
     if returnUnevolved:
+        plot_arr = (cc['infall_mass'][satellites_mask]/M)[mask]
+    elif returnZeta0:
         plot_arr = (cc['infall_mass'][satellites_mask]/M)[mask]
     else:
         plot_arr = (cc['m_evolved'][satellites_mask]/M)[mask]
@@ -100,15 +105,15 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False):
     
     return plot_arr, nHalo
 
-def plotCMF(outfile, M1, M2, s1, returnUnevolved, label, r):
+def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True):
     """Plot log/log plot of cores mass function (evolved or unevolved, given by `returnUnevolved`) with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
-    parr, nH = CMF(outfile, M1, M2, s1, returnUnevolved)
-    hist(np.log10(parr), bins=100, normed=True, plotFlag=True, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=True)
+    parr, nH = CMF(outfile, M1, M2, s1, returnUnevolved, cc)
+    return hist(np.log10(parr), bins=100, normed=True, plotFlag=plotFlag, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=normLogCnts)
 
-def plotSHMF(M1, M2, r, label='subhalos'):
+def plotSHMF(M1, M2, r=None, label='subhalos', plotFlag=True, normLogCnts=True):
     """Plot log/log plot of subhalo mass function with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
     shmf, nH = SHMF(M1, M2)
-    hist(np.log10(shmf), bins=100, normed=True, normBinsize=True, normCnts=False, normLogCnts=True, normScalar=nH, plotFlag=True, label='subhalos', alpha=1, range=r)
+    return hist(np.log10(shmf), bins=100, normed=True, normBinsize=True, normCnts=False, normLogCnts=normLogCnts, normScalar=nH, plotFlag=plotFlag, label='subhalos', alpha=1, range=r)
 
 def SHMF_plot(outfile, M1, M2, bins, step):
 	# TODO plot histogram

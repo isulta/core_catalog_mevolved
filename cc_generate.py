@@ -44,7 +44,7 @@ def write_dict_to_disk(step, cc):
 def fname_cc(step):
     return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
 
-def create_core_catalog_mevolved(virialFlag):
+def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=True):
     """
     Appends mevolved to core catalog and saves output in HDF5.
     Works  by computing mevolved for step+1 at each step and saving that in memory.
@@ -110,8 +110,9 @@ def create_core_catalog_mevolved(virialFlag):
             assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
          
         
-        # Write output to disk
-        write_dict_to_disk(step, cc)
+        if writeOutputFlag:
+            # Write output to disk
+            write_dict_to_disk(step, cc)
 
        # Compute m_evolved of satellites according to SHMLModel for NEXT time step and save as cc_prev['next_m_evolved'] in memory.
        # Mass loss assumed to begin at step AFTER infall detected.
@@ -120,10 +121,10 @@ def create_core_catalog_mevolved(virialFlag):
             cc_prev['next_m_evolved'] = np.zeros_like(cc['infall_mass'])
             
             if numSatellites != 0: # If there are satellites (not applicable for first step)
-                cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step)
+                cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta)
                 #cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=23.7, zeta=0.36)
 
-
+    return cc
 
 if __name__ == '__main__':
     create_core_catalog_mevolved(virialFlag=False)

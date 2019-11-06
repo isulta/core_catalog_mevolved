@@ -59,7 +59,11 @@ def m_vir(m200c, step):
     z = step2z[step]
     return m200c * (delta_vir(z)/200.) * (0.746*(delta_vir(z)/delta_vir(0))**0.395)**-3
 
-def m_evolved(m0, M0, step, step_prev, A=0.86, zeta=0.07):
+def m_evolved(m0, M0, step, step_prev, A=None, zeta=None):
+    """Sets 2016a fitting parameters if none given."""
+    if A is None:
+        A = 0.86
+        zeta = 0.07
     # A conversion to fix delta_vir(0) != 178 discrepancy
     A = A * (delta_vir(0)/178.)**0.5
 

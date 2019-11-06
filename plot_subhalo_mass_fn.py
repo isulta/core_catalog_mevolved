@@ -56,6 +56,7 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=F
         outfile {string} -- HDF5 core catalog file with 'coredata' dir.
         M1, M2 {float} -- Host halos with M in mass range [M1, M2], where M is central's `infall_mass` from core catalog.
         cc {dict} -- If given, `outfile` is not read and `cc` is used instead.
+        A {float} -- Fitting parameter used for fast mass evolution if `returnZeta0`.
     
     Keyword Arguments:
         s1 {bool} -- If true, consider only 1st order substructure (i.e. subhalos). (default: {False})
@@ -97,7 +98,7 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=F
     if returnUnevolved:
         plot_arr = (cc['infall_mass'][satellites_mask]/M)[mask]
     elif returnZeta0:
-        plot_arr = (cc['infall_mass'][satellites_mask]/M)[mask]
+        plot_arr = SHMLM.fast_m_evolved( (cc['infall_mass'][satellites_mask]/M)[mask], cc['infall_step'][satellites_mask][mask], A)
     else:
         plot_arr = (cc['m_evolved'][satellites_mask]/M)[mask]
     
@@ -105,9 +106,9 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=F
     
     return plot_arr, nHalo
 
-def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True):
+def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None):
     """Plot log/log plot of cores mass function (evolved or unevolved, given by `returnUnevolved`) with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
-    parr, nH = CMF(outfile, M1, M2, s1, returnUnevolved, cc)
+    parr, nH = CMF(outfile, M1, M2, s1, returnUnevolved, cc, returnZeta0, A)
     return hist(np.log10(parr), bins=100, normed=True, plotFlag=plotFlag, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=normLogCnts)
 
 def plotSHMF(M1, M2, r=None, label='subhalos', plotFlag=True, normLogCnts=True):

@@ -22,7 +22,7 @@ vars_cc = [
     # 'vz', 
     # 'radius', 
     'infall_mass', 
-    # 'infall_step', 
+    'infall_step', 
     # 'infall_fof_halo_tag',
     # 'infall_tree_node_index',
     'central', 

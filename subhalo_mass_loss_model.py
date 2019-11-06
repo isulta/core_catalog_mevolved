@@ -59,13 +59,16 @@ def m_vir(m200c, step):
     z = step2z[step]
     return m200c * (delta_vir(z)/200.) * (0.746*(delta_vir(z)/delta_vir(0))**0.395)**-3
 
+def convertA(A):
+    """A conversion to fix delta_vir(0) != 178 discrepancy."""
+    return A * (delta_vir(0)/178.)**0.5
+
 def m_evolved(m0, M0, step, step_prev, A=None, zeta=None):
     """Sets 2016a fitting parameters if none given."""
     if A is None:
         A = 0.86
         zeta = 0.07
-    # A conversion to fix delta_vir(0) != 178 discrepancy
-    A = A * (delta_vir(0)/178.)**0.5
+    A = convertA(A)
 
     z = step2z[step]
     delta_t = step2lookback[step_prev] - step2lookback[step]
@@ -74,3 +77,35 @@ def m_evolved(m0, M0, step, step_prev, A=None, zeta=None):
         return m0 * np.exp( -delta_t/tau(z,A) )
     else:
         return m0 * ( 1 + zeta * (m0/M0)**zeta * delta_t/tau(z,A) )**(-1/zeta)
+
+def fexp(infall_step, A):
+    """Returns array of exponential factors exp(-sum(Delta t_i/tau_i)) for each satellite core with `infall_step`."""
+    flipsteps = np.flip(steps)
+    fexp_map = np.zeros_like(flipsteps, dtype=np.float32)
+    
+    for i in range(2, len(flipsteps)):
+        si, si1, si2 = flipsteps[i], flipsteps[i-1], flipsteps[i-2]
+        zi2 = step2z[si2]
+        delta_t = step2lookback[si1] - step2lookback[si2]
+        fexp_map[i] = delta_t/tau(zi2, A)
+    
+    # fexp_map is exponential factor for each step in steps 
+    fexp_map = np.flip( np.exp( -1 * np.cumsum(fexp_map) ) )
+
+    vals, inv_idx = np.unique(infall_step, return_inverse=True)
+
+    return fexp_map[np.isin(steps, vals)][inv_idx]
+
+def fast_m_evolved(psi, infall_step, A):
+    """Quickly computes m_evolved for zeta=0 case, given z=0 satellite cores.
+    
+    Arguments:
+        psi {np 1d array} -- m_infall/M for satellites at z=0
+        infall_step {np 1d array} -- infall_step of cores in `psi`
+        A {float} -- fitting parameter
+
+    Returns:
+        np 1d array -- m_evolved of given cores
+    """
+    A = convertA(A)
+    return psi * fexp(infall_step, A)

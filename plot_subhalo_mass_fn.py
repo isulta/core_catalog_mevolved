@@ -49,7 +49,7 @@ def SHMF(M1, M2):
     
     return plot_arr, nH
 
-def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=False, A=None):
+def CMF(outfile, M1, M2, s1=False, disrupt=False, returnUnevolved=False, cc=None, returnZeta0=False, A=None):
     """Generate cores array m/M for mass function plot.
     
     Arguments:
@@ -60,8 +60,9 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=F
     
     Keyword Arguments:
         s1 {bool} -- If true, consider only 1st order substructure (i.e. subhalos). (default: {False})
+        disrupt {bool} -- If true, applies core disruption criteria defined in SHMLM when filtering substructure. (default: {False})
         returnUnevolved {bool} -- If true, use unevolved m (i.e. core `infall_mass`) (default: {False})
-        returnZeta0 {bool} -- If true, does fast mass evolution for the case of zeta=0, A=`A`.
+        returnZeta0 {bool} -- If true, does fast mass evolution for the case of zeta=0, A=`A`. (default: {False})
     
     Returns:
         np 1d array -- m/M array with appropriate mask
@@ -88,11 +89,13 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=F
 
     # Create M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
     M = cc['infall_mass'][centrals_mask][idx4][idx_inv]
-    Coretag = cc['core_tag'][centrals_mask][idx4][idx_inv]
     
-    mask = np.flatnonzero( (M1 <= M) & (M <= M2) & (cc['infall_mass'][satellites_mask] >= SHMLM.PARTICLES100MASS) )
+    mask = np.flatnonzero( (M1 <= M) & (M <= M2) )#& (cc['infall_mass'][satellites_mask] >= SHMLM.PARTICLES100MASS) )
     if s1:
+        Coretag = cc['core_tag'][centrals_mask][idx4][idx_inv]
         mask = np.intersect1d( mask, np.flatnonzero(cc['host_core'][satellites_mask]==Coretag) )
+    if disrupt:
+        mask = np.intersect1d( mask, np.flatnonzero(SHMLM.disruption_mask(cc, satellites_mask)) )
     
     # m/M array for CMF
     if returnUnevolved:
@@ -102,13 +105,14 @@ def CMF(outfile, M1, M2, s1=False, returnUnevolved=False, cc=None, returnZeta0=F
     else:
         plot_arr = (cc['m_evolved'][satellites_mask]/M)[mask]
     
-    nHalo = len(np.unique(cc['tree_node_index'][satellites_mask][mask]))
+    # nHalo = len(np.unique(cc['tree_node_index'][satellites_mask][mask])) # number of halos hosting masked satellites
+    nHalo = np.sum( (M1 <= cc['infall_mass'][centrals_mask])&(cc['infall_mass'][centrals_mask]<=M2) )
     
     return plot_arr, nHalo
 
-def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None):
+def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None, disrupt=False):
     """Plot log/log plot of cores mass function (evolved or unevolved, given by `returnUnevolved`) with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
-    parr, nH = CMF(outfile, M1, M2, s1, returnUnevolved, cc, returnZeta0, A)
+    parr, nH = CMF(outfile, M1, M2, s1, disrupt, returnUnevolved, cc, returnZeta0, A)
     return hist(np.log10(parr), bins=100, normed=True, plotFlag=plotFlag, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=normLogCnts)
 
 def plotSHMF(M1, M2, r=None, label='subhalos', plotFlag=True, normLogCnts=True):

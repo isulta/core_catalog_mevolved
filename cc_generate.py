@@ -11,23 +11,23 @@ cc_output_dir = SHMLM.cc_output_dir
 steps = SHMLM.steps
 
 vars_cc = [
-#    'fof_halo_tag',
-   'core_tag', 
-   'tree_node_index', 
-    # 'x', 
-    # 'y', 
-    # 'z', 
-    # 'vx', 
-    # 'vy', 
-    # 'vz', 
-    # 'radius', 
+    'fof_halo_tag',
+    'core_tag', 
+    'tree_node_index', 
+    'x', 
+    'y', 
+    'z', 
+    'vx', 
+    'vy', 
+    'vz', 
+    'radius', 
     'infall_mass', 
     'infall_step', 
-    # 'infall_fof_halo_tag',
-    # 'infall_tree_node_index',
+    'infall_fof_halo_tag',
+    'infall_tree_node_index',
     'central', 
-    # 'merged',
-    # 'vel_disp',
+    'merged',
+    'vel_disp',
     'host_core'
 ]
 
@@ -49,6 +49,9 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
     Appends mevolved to core catalog and saves output in HDF5.
     Works  by computing mevolved for step+1 at each step and saving that in memory.
     """
+    if writeOutputFlag:
+        print 'Reading data from {} and writing output to {}'.format(cc_data_dir, cc_output_dir)
+
     cc = {}
     cc_prev = {}
     

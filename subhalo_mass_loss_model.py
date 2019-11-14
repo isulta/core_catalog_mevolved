@@ -110,13 +110,17 @@ def fast_m_evolved(psi, infall_step, A):
     A = convertA(A)
     return psi * fexp(infall_step, A)
 
-def disruption_mask(cc, satellites_mask):
+def disruption_mask(cc, satellites_mask, criteria):
     """Returns np bool array of shape `cc[satellites_mask]` with disruption criteria implemented on satellite cores."""
     # criterion: (1) core radius is less than 20 kpc/h
-    return cc['radius'][satellites_mask] < 20e-3
+    radius_mask = cc['radius'][satellites_mask] < 20e-3
 
     # criterion: (2) remove merged cores
-    # return cc['merged'][satellites_mask] != 1
+    merged_mask = cc['merged'][satellites_mask] != 1
 
-    # criteria: (1) and (2)
-    # return (cc['radius'][satellites_mask] < 20e-3)&(cc['merged'][satellites_mask] != 1)
+    if criteria==1:
+        return radius_mask
+    elif criteria==2:
+        return merged_mask
+    elif criteria==411:
+        return radius_mask&merged_mask

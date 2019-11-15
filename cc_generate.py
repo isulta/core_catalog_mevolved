@@ -2,6 +2,7 @@ import numpy as np
 import genericio as gio
 import h5py
 import subhalo_mass_loss_model as SHMLM
+from itk import h5_write_dict
 
 from tqdm import tqdm # progress bar
 
@@ -30,16 +31,6 @@ vars_cc = [
     'vel_disp',
     'host_core'
 ]
-
-def write_dict_to_disk(step, cc):
-    outfile = cc_output_dir + '09_03_2019.AQ.{}.corepropertiesextend.hdf5'.format(step)
-
-    f = h5py.File(outfile, 'w')
-    grp = f.create_group('coredata')
-    for k, v in cc.items():
-        grp[k] = v
-
-    f.close()
 
 def fname_cc(step):
     return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
@@ -115,7 +106,7 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
         
         if writeOutputFlag:
             # Write output to disk
-            write_dict_to_disk(step, cc)
+            h5_write_dict( cc_output_dir + '09_03_2019.AQ.{}.corepropertiesextend.hdf5'.format(step), cc, 'coredata' )
 
        # Compute m_evolved of satellites according to SHMLModel for NEXT time step and save as cc_prev['next_m_evolved'] in memory.
        # Mass loss assumed to begin at step AFTER infall detected.

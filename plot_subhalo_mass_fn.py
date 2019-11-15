@@ -49,7 +49,7 @@ def SHMF(M1, M2):
     
     return plot_arr, nH
 
-def CMF(outfile, M1, M2, s1=False, disrupt=0, returnUnevolved=False, cc=None, returnZeta0=False, A=None):
+def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None, returnZeta0=False, A=None):
     """Generate cores array m/M for mass function plot.
     
     Arguments:
@@ -57,10 +57,10 @@ def CMF(outfile, M1, M2, s1=False, disrupt=0, returnUnevolved=False, cc=None, re
         M1, M2 {float} -- Host halos with M in mass range [M1, M2], where M is central's `infall_mass` from core catalog.
         cc {dict} -- If given, `outfile` is not read and `cc` is used instead.
         A {float} -- Fitting parameter used for fast mass evolution if `returnZeta0`.
+        disrupt {None, int, or list} -- If given, applies core disruption criteria defined in SHMLM when filtering substructure. (default: {None})
     
     Keyword Arguments:
         s1 {bool} -- If true, consider only 1st order substructure (i.e. subhalos). (default: {False})
-        disrupt {int} -- If given, applies core disruption criteria defined in SHMLM when filtering substructure. (default: {0})
         returnUnevolved {bool} -- If true, use unevolved m (i.e. core `infall_mass`) (default: {False})
         returnZeta0 {bool} -- If true, does fast mass evolution for the case of zeta=0, A=`A`. (default: {False})
     
@@ -94,8 +94,10 @@ def CMF(outfile, M1, M2, s1=False, disrupt=0, returnUnevolved=False, cc=None, re
     if s1:
         Coretag = cc['core_tag'][centrals_mask][idx4][idx_inv]
         mask = np.intersect1d( mask, np.flatnonzero(cc['host_core'][satellites_mask]==Coretag) )
-    if disrupt != 0:
-        mask = np.intersect1d( mask, np.flatnonzero(SHMLM.disruption_mask(cc, satellites_mask, disrupt)) )
+    if disrupt is not None:
+        cc_satellites = { k:cc[k][satellites_mask] for k in cc.keys() }
+        X, Y, Z = cc['x'][centrals_mask][idx4][idx_inv], cc['y'][centrals_mask][idx4][idx_inv], cc['z'][centrals_mask][idx4][idx_inv]
+        mask = np.intersect1d( mask, np.flatnonzero(SHMLM.disruption_mask(cc_satellites, disrupt, M, X, Y, Z)) )
     
     # m/M array for CMF
     if returnUnevolved:
@@ -110,7 +112,7 @@ def CMF(outfile, M1, M2, s1=False, disrupt=0, returnUnevolved=False, cc=None, re
     
     return plot_arr, nHalo
 
-def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None, disrupt=False):
+def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None, disrupt=None):
     """Plot log/log plot of cores mass function (evolved or unevolved, given by `returnUnevolved`) with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
     parr, nH = CMF(outfile, M1, M2, s1, disrupt, returnUnevolved, cc, returnZeta0, A)
     return hist(np.log10(parr), bins=100, normed=True, plotFlag=plotFlag, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=normLogCnts)

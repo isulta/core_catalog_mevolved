@@ -10,6 +10,7 @@ cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/outpu
 
 import numpy as np
 import os
+from itk import periodic_bcs
 
 # step to z/lookback time cache
 from cosmo import StepZ
@@ -110,17 +111,39 @@ def fast_m_evolved(psi, infall_step, A):
     A = convertA(A)
     return psi * fexp(infall_step, A)
 
-def disruption_mask(cc, satellites_mask, criteria):
-    """Returns np bool array of shape `cc[satellites_mask]` with disruption criteria implemented on satellite cores."""
+def getR200(Mfof):
+    """Computes R200 at z=0: radius of SO halo of mass `Mfof` with density 200*critical density(z=0).
+    Mfof must have units Msun/h.
+    Returned R200 has units Mpc/h.
+    """
+    return np.power(4.302e-15*Mfof, 1./3)
+
+def dist(x,y,z,x0,y0,z0):
+    """Find distance between two points (x,y,z) and (x0, y0, z0)."""
+    return np.sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 )
+
+def disruption_mask(cc_satellites, criteria, M, X, Y, Z):
+    """Returns np bool array of shape `cc_satellites` with disruption criteria (None, int, or list) implemented on satellite cores."""
+    if criteria is None:
+        criteria = []
+    elif type(criteria) is int:
+        criteria = [criteria]
+
     # criterion: (1) core radius is less than 20 kpc/h
-    radius_mask = cc['radius'][satellites_mask] < 20e-3
+    radius_mask = cc_satellites['radius'] < 20e-3
 
     # criterion: (2) remove merged cores
-    merged_mask = cc['merged'][satellites_mask] != 1
+    merged_mask = cc_satellites['merged'] != 1
 
-    if criteria==1:
-        return radius_mask
-    elif criteria==2:
-        return merged_mask
-    elif criteria==411:
-        return radius_mask&merged_mask
+    # criterion: (3) cores are distance r >= 0.05*R200 from central core
+    R200 = getR200(M)
+    x, y, z = periodic_bcs(cc_satellites['x'], X, BOXSIZE), periodic_bcs(cc_satellites['y'], Y, BOXSIZE), periodic_bcs(cc_satellites['z'], Z, BOXSIZE)
+    distance_mask = dist(x, y, z, X, Y, Z) >= (0.05*R200)
+
+    masks_dict = { 1:radius_mask, 2:merged_mask, 3:distance_mask }
+
+    mask = np.full_like(cc_satellites['x'], True, bool)
+    for i in criteria:
+        mask = mask&masks_dict[i]
+    
+    return mask

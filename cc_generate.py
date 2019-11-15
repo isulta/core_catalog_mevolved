@@ -32,8 +32,11 @@ vars_cc = [
     'host_core'
 ]
 
-def fname_cc(step):
-    return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
+def fname_cc(step, mode):
+    if mode == 'input:'
+        return cc_data_dir + '09_03_2019.AQ.{}.coreproperties'.format(step)
+    elif mode == 'output':
+        return cc_output_dir + '09_03_2019.AQ.{}.corepropertiesextend.hdf5'.format(step)
 
 def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=True):
     """
@@ -48,7 +51,7 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
     
     for step in tqdm(steps):
         # Read in cc for step
-        cc = { v:gio.gio_read(fname_cc(step), v)[0] for v in vars_cc }
+        cc = { v:gio.gio_read(fname_cc(step, 'input'), v)[0] for v in vars_cc }
         
         if virialFlag:
             # Convert all mass to virial
@@ -106,7 +109,7 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
         
         if writeOutputFlag:
             # Write output to disk
-            h5_write_dict( cc_output_dir + '09_03_2019.AQ.{}.corepropertiesextend.hdf5'.format(step), cc, 'coredata' )
+            h5_write_dict( fname_cc(step, 'output'), cc, 'coredata' )
 
        # Compute m_evolved of satellites according to SHMLModel for NEXT time step and save as cc_prev['next_m_evolved'] in memory.
        # Mass loss assumed to begin at step AFTER infall detected.

@@ -55,10 +55,14 @@ def delta_t_quad(z):
     from scipy.integrate import quad
     return quad( lambda z_: THUBBLE/(E(z_)*(1+z_)), 0, z )[0]
 
+def ratio_R200c_Rvir(z):
+    """Returns R200c/Rvir at redshift z."""
+    return 0.746*(delta_vir(z)/delta_vir(0))**0.395
+
 def m_vir(m200c, step):
     """Convert m200c (c is crticial density at z) to virial mass."""
     z = step2z[step]
-    return m200c * (delta_vir(z)/200.) * (0.746*(delta_vir(z)/delta_vir(0))**0.395)**-3
+    return m200c * (delta_vir(z)/200.) * ratio_R200c_Rvir(z)**-3
 
 def convertA(A):
     """A conversion to fix delta_vir(0) != 178 discrepancy."""
@@ -118,6 +122,13 @@ def getR200(Mfof):
     """
     return np.power(4.302e-15*Mfof, 1./3)
 
+def getRvir_0(Mfof):
+    """Computes Rvir at z=0: radius of SO halo of mass `Mfof` with density Delta_virial(0)*critical density(0).
+    Mfof must have units Msun/h.
+    Returned Rvir_0 has units Mpc/h.
+    """
+    return np.power(4.302e-15*200/delta_vir(0)*Mfof, 1./3)
+
 def dist(x,y,z,x0,y0,z0):
     """Find distance between two points (x,y,z) and (x0, y0, z0)."""
     return np.sqrt( (x-x0)**2 + (y-y0)**2 + (z-z0)**2 )
@@ -135,10 +146,10 @@ def disruption_mask(cc_satellites, criteria, M, X, Y, Z):
     # criterion: (2) remove merged cores
     merged_mask = cc_satellites['merged'] != 1
 
-    # criterion: (3) cores are distance r >= 0.05*R200 from central core
-    R200 = getR200(M)
+    # criterion: (3) cores are distance r >= 0.05*Rvir_0 from central core
+    Rvir_0 = getRvir_0(M)
     x, y, z = periodic_bcs(cc_satellites['x'], X, BOXSIZE), periodic_bcs(cc_satellites['y'], Y, BOXSIZE), periodic_bcs(cc_satellites['z'], Z, BOXSIZE)
-    distance_mask = dist(x, y, z, X, Y, Z) >= (0.05*R200)
+    distance_mask = dist(x, y, z, X, Y, Z) >= (0.05*Rvir_0)
 
     masks_dict = { 1:radius_mask, 2:merged_mask, 3:distance_mask }
 

@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import h5py
 import subhalo_mass_loss_model as SHMLM
-from itk import hist, h5_read_dict, plt_latex, gio_read_dict
+from itk import hist, h5_read_dict, plt_latex, gio_read_dict, many_to_one
 
 # TO CHANGE
 step = 499
@@ -76,27 +76,17 @@ def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None,
     satellites_mask = cc['central'] == 0
     centrals_mask = cc['central'] == 1
 
-    # Match satellites tni with centrals tni.
-    vals2, idx3, idx4 = np.intersect1d( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask], return_indices=True)
-
-    # Unique satellites tni array with inverse indices
-    vals3, idx_inv = np.unique(cc['tree_node_index'][satellites_mask], return_inverse=True)
-
-    # Some checks
-    assert np.array_equal(vals2, vals3), "All satellites don't have a central match."
-    assert np.array_equal(vals3[idx_inv], cc['tree_node_index'][satellites_mask]), 'np.unique inverse indices: original array recreation failure'
-    assert np.array_equal(cc['tree_node_index'][centrals_mask][idx4], np.sort(cc['tree_node_index'][centrals_mask][idx4])), 'Centrals with satellites: array sorting failure'
-
     # Create M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
-    M = cc['infall_mass'][centrals_mask][idx4][idx_inv]
+    idx_m21 = many_to_one( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask] )
+    M = cc['infall_mass'][centrals_mask][idx_m21]
     
     mask = np.flatnonzero( (M1 <= M) & (M <= M2) )#& (cc['infall_mass'][satellites_mask] >= SHMLM.PARTICLES100MASS) )
     if s1:
-        Coretag = cc['core_tag'][centrals_mask][idx4][idx_inv]
+        Coretag = cc['core_tag'][centrals_mask][idx_m21]
         mask = np.intersect1d( mask, np.flatnonzero(cc['host_core'][satellites_mask]==Coretag) )
     if disrupt is not None:
         cc_satellites = { k:cc[k][satellites_mask] for k in cc.keys() }
-        X, Y, Z = cc['x'][centrals_mask][idx4][idx_inv], cc['y'][centrals_mask][idx4][idx_inv], cc['z'][centrals_mask][idx4][idx_inv]
+        X, Y, Z = cc['x'][centrals_mask][idx_m21], cc['y'][centrals_mask][idx_m21], cc['z'][centrals_mask][idx_m21]
         mask = np.intersect1d( mask, np.flatnonzero(SHMLM.disruption_mask(cc_satellites, disrupt, M, X, Y, Z)) )
     
     # m/M array for CMF

@@ -2,7 +2,7 @@ import numpy as np
 import genericio as gio
 import h5py
 import subhalo_mass_loss_model as SHMLM
-from itk import h5_write_dict
+from itk import h5_write_dict, many_to_one
 
 from tqdm import tqdm # progress bar
 
@@ -90,22 +90,9 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
             # Set m_evolved of satellites with m_evolved=0 to infall mass.
             cc['m_evolved'][satellites_mask] = m
 
-            # Match satellites tni with centrals tni.
-            vals2, idx3, idx4 = np.intersect1d( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask], return_indices=True)
-
-            # Unique satellites tni array with inverse indices
-            vals3, idx_inv = np.unique(cc['tree_node_index'][satellites_mask], return_inverse=True)
-            
-            assert np.array_equal(vals2, vals3), "All satellites don't have a central match."
-            assert np.array_equal(vals3[idx_inv], cc['tree_node_index'][satellites_mask]), 'np.unique inverse indices: original array recreation failure'
-            
-            assert np.array_equal(cc['tree_node_index'][centrals_mask][idx4], np.sort(cc['tree_node_index'][centrals_mask][idx4])), 'Centrals with satellites: array sorting failure'
-
-
             # Initialize M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
-            M = cc['infall_mass'][centrals_mask][idx4][idx_inv]
+            M = cc['infall_mass'][centrals_mask][ many_to_one( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask] ) ]
             assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
-         
         
         if writeOutputFlag:
             # Write output to disk

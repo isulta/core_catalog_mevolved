@@ -10,7 +10,7 @@ cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/outpu
 
 import numpy as np
 import os
-from itk import periodic_bcs
+from itk import periodic_bcs, many_to_one
 
 # step to z/lookback time cache
 from cosmo import StepZ
@@ -158,3 +158,39 @@ def disruption_mask(cc_satellites, criteria, M, X, Y, Z):
         mask = mask&masks_dict[i]
     
     return mask
+
+def core_mask(cc, M1, M2, s1=False, disrupt=None):
+    """Given a core catalog and filtering criteria, returns indices in cc of filtered satellite cores.
+    
+    Arguments:
+        cc {dict} -- core catalog
+        M1, M2 {float} -- Host halos with M in mass range [M1, M2], where M is central's `infall_mass` from core catalog.
+        disrupt {None, int, or list} -- If given, applies core filtering criteria defined in SHMLM when filtering substructure. (default: {None})
+    
+    Keyword Arguments:
+        s1 {bool} -- If true, consider only 1st order substructure (i.e. subhalos). (default: {False})
+    
+    Returns:
+        np 1d array -- indices of satellite filtered cores in `cc`
+        np 1d array -- M array (corresponds with satellite filtered cores)
+        integer -- number of host halos (M)
+    """
+    satellites_mask = cc['central'] == 0
+    centrals_mask = cc['central'] == 1
+
+    # Create M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
+    idx_m21 = many_to_one( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask] )
+    M = cc['infall_mass'][centrals_mask][idx_m21]
+    
+    mask = np.flatnonzero( (M1 <= M) & (M <= M2) )#& (cc['infall_mass'][satellites_mask] >= PARTICLES100MASS) )
+    if s1:
+        Coretag = cc['core_tag'][centrals_mask][idx_m21]
+        mask = np.intersect1d( mask, np.flatnonzero(cc['host_core'][satellites_mask]==Coretag) )
+    if disrupt is not None:
+        cc_satellites = { k:cc[k][satellites_mask] for k in cc.keys() }
+        X, Y, Z = cc['x'][centrals_mask][idx_m21], cc['y'][centrals_mask][idx_m21], cc['z'][centrals_mask][idx_m21]
+        mask = np.intersect1d( mask, np.flatnonzero(disruption_mask(cc_satellites, disrupt, M, X, Y, Z)) )
+    
+    nHalo = np.sum( (M1<=cc['infall_mass'][centrals_mask])&(cc['infall_mass'][centrals_mask]<=M2) )
+    
+    return np.flatnonzero(satellites_mask)[mask], M[mask], nHalo

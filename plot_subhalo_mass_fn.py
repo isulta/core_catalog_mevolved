@@ -32,14 +32,10 @@ def SHMF(M1, M2):
     assert np.all(np.isin(sh['fof_halo_tag'], mt['fof_halo_tag'])), 'Every subhalo does not have corresponding fof_halo_tag in merger tree.'
     assert len(np.unique(mt['fof_halo_tag']))==len(mt['fof_halo_tag']), 'Duplicate fof_halo_tag(s) found in merger tree.'
 
-    # Match subhalos with mt nodes
-    _, _, idx2 = np.intersect1d( sh['fof_halo_tag'], mt['fof_halo_tag'], assume_unique=False, return_indices=True)
-
-    # Unique subhalos array with inverse indices
-    _, idx_inv = np.unique(sh['fof_halo_tag'], return_inverse=True)
+    idx_m21 = many_to_one(sh['fof_halo_tag'], mt['fof_halo_tag'])
     
     # Initialize M array (corresponds with sh) to be host halo fof mass of each subhalo
-    M = mt['fof_halo_mass'][idx2][idx_inv]
+    M = mt['fof_halo_mass'][idx_m21]
 
     # m/M with mask: M in [M1,M2] with central subhalos (subhalo tag == 0) removed
     mask = (M1<=M)&(M<=M2)&(sh['subhalo_tag']!=0)
@@ -73,32 +69,15 @@ def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None,
         # Load extended core catalog
         cc = h5_read_dict(outfile, 'coredata')
 
-    satellites_mask = cc['central'] == 0
-    centrals_mask = cc['central'] == 1
-
-    # Create M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
-    idx_m21 = many_to_one( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask] )
-    M = cc['infall_mass'][centrals_mask][idx_m21]
-    
-    mask = np.flatnonzero( (M1 <= M) & (M <= M2) )#& (cc['infall_mass'][satellites_mask] >= SHMLM.PARTICLES100MASS) )
-    if s1:
-        Coretag = cc['core_tag'][centrals_mask][idx_m21]
-        mask = np.intersect1d( mask, np.flatnonzero(cc['host_core'][satellites_mask]==Coretag) )
-    if disrupt is not None:
-        cc_satellites = { k:cc[k][satellites_mask] for k in cc.keys() }
-        X, Y, Z = cc['x'][centrals_mask][idx_m21], cc['y'][centrals_mask][idx_m21], cc['z'][centrals_mask][idx_m21]
-        mask = np.intersect1d( mask, np.flatnonzero(SHMLM.disruption_mask(cc_satellites, disrupt, M, X, Y, Z)) )
+    idx_filteredsatcores, M, nHalo = SHMLM.core_mask(cc, M1, M2, s1=s1, disrupt=disrupt)
     
     # m/M array for CMF
     if returnUnevolved:
-        plot_arr = (cc['infall_mass'][satellites_mask]/M)[mask]
+        plot_arr = cc['infall_mass'][idx_filteredsatcores]/M
     elif returnZeta0:
-        plot_arr = SHMLM.fast_m_evolved( (cc['infall_mass'][satellites_mask]/M)[mask], cc['infall_step'][satellites_mask][mask], A)
+        plot_arr = SHMLM.fast_m_evolved( cc['infall_mass'][idx_filteredsatcores]/M, cc['infall_step'][idx_filteredsatcores], A)
     else:
-        plot_arr = (cc['m_evolved'][satellites_mask]/M)[mask]
-    
-    # nHalo = len(np.unique(cc['tree_node_index'][satellites_mask][mask])) # number of halos hosting masked satellites
-    nHalo = np.sum( (M1 <= cc['infall_mass'][centrals_mask])&(cc['infall_mass'][centrals_mask]<=M2) )
+        plot_arr = cc['m_evolved'][idx_filteredsatcores]/M
     
     return plot_arr, nHalo
 

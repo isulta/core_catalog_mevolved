@@ -20,7 +20,7 @@ Currently using [Jiang and van den Bosch 2016](https://academic.oup.com/mnras/ar
 - Astropy
 - H5Py
 - [GenericIO](https://trac.alcf.anl.gov/projects/genericio)
-- itk (for plotting mass functions with `plot_subhalo_mass_fn.py`)
+- [itk](https://github.com/isulta/itk)
 - [tqdm](https://github.com/tqdm/tqdm) (for progress bar)
 - Numpy
 - Matplotlib

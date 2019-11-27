@@ -9,6 +9,9 @@ from tqdm import tqdm # progress bar
 cc_data_dir = SHMLM.cc_data_dir
 cc_output_dir = SHMLM.cc_output_dir
 
+A_arr = [0.25,0.5,1.0,1.2,1.4,1.5,1.6,2.0,4.0,10]
+zeta_arr = [0.01, 0.02, 0.04, 0.06, 0.07, 0.08, 0.1, 0.12, 0.14, 0.2]
+
 steps = SHMLM.steps
 
 vars_cc = [
@@ -38,7 +41,13 @@ def fname_cc(step, mode):
     elif mode == 'output':
         return cc_output_dir + '09_03_2019.AQ.{}.corepropertiesextend.hdf5'.format(step)
 
-def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=True):
+def m_evolved_col(A, zeta, next=False):
+    if next:
+        return 'next_m_evolved_{}_{}'.format(A, zeta)
+    else:
+        return 'm_evolved_{}_{}'.format(A, zeta)
+
+def create_core_catalog_mevolved(virialFlag, writeOutputFlag=True):
     """
     Appends mevolved to core catalog and saves output in HDF5.
     Works  by computing mevolved for step+1 at each step and saving that in memory.
@@ -67,7 +76,9 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
             assert numSatellites == 0, 'Satellites found at first step.'
 
         # Add column for m_evolved and initialize to 0
-        cc['m_evolved'] = np.zeros_like(cc['infall_mass'])
+        for A in A_arr:
+            for zeta in zeta_arr:
+                cc[m_evolved_col(A, zeta)] = np.zeros_like(cc['infall_mass'])
         
         # If there are satellites (not applicable for first step)
         if numSatellites != 0:
@@ -77,22 +88,24 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
 
             # assert len(vals) == len(cc['core_tag'][satellites_mask]), 'All cores from prev step did not carry over.'
             # assert len(cc['core_tag'][satellites_mask]) == len(np.unique(cc['core_tag'][satellites_mask])), 'Satellite core tags not unique for this time step.'
+            
+            for A in A_arr:
+                for zeta in zeta_arr:
+                    # Set m_evolved of all satellites that have core tag match on prev step to next_m_evolved of prev step.
+                    # DOUBLE MASK ASSIGNMENT: cc['m_evolved'][satellites_mask][idx1] = cc_prev['next_m_evolved'][idx2] 
+                    cc[m_evolved_col(A, zeta)][ np.flatnonzero(satellites_mask)[idx1] ] = cc_prev[m_evolved_col(A, zeta, next=True)][idx2]
 
-            # Set m_evolved of all satellites that have core tag match on prev step to next_m_evolved of prev step.
-            # DOUBLE MASK ASSIGNMENT: cc['m_evolved'][satellites_mask][idx1] = cc_prev['next_m_evolved'][idx2] 
-            cc['m_evolved'][ np.flatnonzero(satellites_mask)[idx1] ] = cc_prev['next_m_evolved'][idx2]
+                    # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
+                    m = (cc[m_evolved_col(A, zeta)][satellites_mask] == 0)*cc['infall_mass'][satellites_mask] + (cc[m_evolved_col(A, zeta)][satellites_mask] != 0)*cc[m_evolved_col(A, zeta)][satellites_mask]
+                    # Initialize m array (corresponds with cc[satellites_mask]) to be either virial_infall_mass (step after infall) or m_evolved (subsequent steps).
+                    #m = (cc[m_evolved_col(A, zeta)][satellites_mask] == 0)*SHMLM.m_vir(cc['infall_mass'][satellites_mask], step) + (cc[m_evolved_col(A, zeta)][satellites_mask] != 0)*cc[m_evolved_col(A, zeta)][satellites_mask]
 
-            # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
-            m = (cc['m_evolved'][satellites_mask] == 0)*cc['infall_mass'][satellites_mask] + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
-            # Initialize m array (corresponds with cc[satellites_mask]) to be either virial_infall_mass (step after infall) or m_evolved (subsequent steps).
-            #m = (cc['m_evolved'][satellites_mask] == 0)*SHMLM.m_vir(cc['infall_mass'][satellites_mask], step) + (cc['m_evolved'][satellites_mask] != 0)*cc['m_evolved'][satellites_mask]
-
-            # Set m_evolved of satellites with m_evolved=0 to infall mass.
-            cc['m_evolved'][satellites_mask] = m
+                    # Set m_evolved of satellites with m_evolved=0 to infall mass.
+                    cc[m_evolved_col(A, zeta)][satellites_mask] = m
 
             # Initialize M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
             M = cc['infall_mass'][centrals_mask][ many_to_one( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask] ) ]
-            assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
+            # assert len(M) == len(m) == len(cc['m_evolved'][satellites_mask]), 'M, m, cc[satellites_mask] lengths not equal.'
         
         if writeOutputFlag:
             # Write output to disk
@@ -102,11 +115,14 @@ def create_core_catalog_mevolved(virialFlag, A=None, zeta=None, writeOutputFlag=
        # Mass loss assumed to begin at step AFTER infall detected.
         if step != steps[-1]:
             cc_prev = { 'core_tag':cc['core_tag'].copy() }
-            cc_prev['next_m_evolved'] = np.zeros_like(cc['infall_mass'])
-            
-            if numSatellites != 0: # If there are satellites (not applicable for first step)
-                cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta)
-                #cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=23.7, zeta=0.36)
+            for A in A_arr:
+                for zeta in zeta_arr:
+                    cc_prev[m_evolved_col(A, zeta, next=True)] = np.zeros_like(cc['infall_mass'])
+                    
+                    if numSatellites != 0: # If there are satellites (not applicable for first step)
+                        m = cc[m_evolved_col(A, zeta)][satellites_mask]
+                        cc_prev[m_evolved_col(A, zeta, next=True)][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta)
+                        #cc_prev['next_m_evolved'][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=23.7, zeta=0.36)
 
     return cc
 

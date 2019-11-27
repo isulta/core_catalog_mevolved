@@ -6,7 +6,7 @@ THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.71
 OMEGA_0 = OMEGA_M #1.0
 cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog_merg/'
-cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_merg_fof/'
+cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_merg_fof_fitting/'
 
 import numpy as np
 import os
@@ -69,11 +69,12 @@ def convertA(A):
     return A * (delta_vir(0)/178.)**0.5
 
 def m_evolved(m0, M0, step, step_prev, A=None, zeta=None):
-    """Sets 2016a fitting parameters if none given."""
+    """Sets Giocoli et al. 2008 fitting parameters if none given."""
     if A is None:
-        A = 0.86
-        zeta = 0.07
-    A = convertA(A)
+        A = 1.628/(2*LITTLEH)
+        zeta = 0.06
+        print "A not defined!"
+    # A = convertA(A)
 
     z = step2z[step]
     delta_t = step2lookback[step_prev] - step2lookback[step]
@@ -128,6 +129,14 @@ def getRvir_0(Mfof):
     Returned Rvir_0 has units Mpc/h.
     """
     return np.power(4.302e-15*200/delta_vir(0)*Mfof, 1./3)
+
+def getRvir(Mfof, z):
+    """Computes Rvir at z: radius of SO halo of mass `Mfof` with density Delta_virial(z)*critical density(z).
+    Mfof must have units Msun/h.
+    Returned Rvir has units Mpc/h.
+    """
+    pc = (cosmoFLCDM.critical_density(z).to('Msun* Mpc**(-3)')/LITTLEH**2).value
+    return np.power(Mfof*3/(4*np.pi*delta_vir(z)*pc), 1./3)
 
 def dist(x,y,z,x0,y0,z0):
     """Find distance between two points (x,y,z) and (x0, y0, z0)."""

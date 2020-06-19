@@ -19,47 +19,49 @@ mt = None
 # END GLOBAL VARS
 
 def subhalos_read():
-    """Read in subhalos and merger tree into global dicts `sh` and `mt`.""" 
+    """Read in subhalos and merger tree into global dicts `sh` and `mt`."""
     global sh, mt
     if sh and mt:
         return
     sh = gio_read_dict(fname_subhalos, ['subhalo_mass', 'subhalo_tag', 'fof_halo_tag'])
     mt = gio_read_dict(fname_mt, ['fof_halo_tag', 'fof_halo_mass'])
 
-def SHMF(M1, M2):
+def SHMF(M1, M2, partcut):
     """Returns 'subhalo mass function' m/M for M in [`M1`,`M2`]."""
     subhalos_read()
     assert np.all(np.isin(sh['fof_halo_tag'], mt['fof_halo_tag'])), 'Every subhalo does not have corresponding fof_halo_tag in merger tree.'
     assert len(np.unique(mt['fof_halo_tag']))==len(mt['fof_halo_tag']), 'Duplicate fof_halo_tag(s) found in merger tree.'
 
     idx_m21 = many_to_one(sh['fof_halo_tag'], mt['fof_halo_tag'])
-    
+
     # Initialize M array (corresponds with sh) to be host halo fof mass of each subhalo
     M = mt['fof_halo_mass'][idx_m21]
 
     # m/M with mask: M in [M1,M2] with central subhalos (subhalo tag == 0) removed
     mask = (M1<=M)&(M<=M2)&(sh['subhalo_tag']!=0)
+    if partcut:
+        mask = mask&(sh['subhalo_mass']>=SHMLM.PARTICLES100MASS)
     plot_arr = (sh['subhalo_mass']/M)[mask]
     # nH = np.sum( np.isin(mt['fof_halo_tag'], sh['fof_halo_tag'][mask]) ) #all halos with at least 1 subhalo
     nH = np.sum( (M1 <= mt['fof_halo_mass'])&(mt['fof_halo_mass']<=M2) )
-    
+
     return plot_arr, nH
 
-def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None, returnZeta0=False, A=None):
+def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None, returnZeta0=False, A=None, idx_m21=None):
     """Generate cores array m/M for mass function plot.
-    
+
     Arguments:
         outfile {string} -- HDF5 core catalog file with 'coredata' dir.
         M1, M2 {float} -- Host halos with M in mass range [M1, M2], where M is central's `infall_mass` from core catalog.
         cc {dict} -- If given, `outfile` is not read and `cc` is used instead.
         A {float} -- Fitting parameter used for fast mass evolution if `returnZeta0`.
         disrupt {None, int, or list} -- If given, applies core disruption criteria defined in SHMLM when filtering substructure. (default: {None})
-    
+
     Keyword Arguments:
         s1 {bool} -- If true, consider only 1st order substructure (i.e. subhalos). (default: {False})
         returnUnevolved {bool} -- If true, use unevolved m (i.e. core `infall_mass`) (default: {False})
         returnZeta0 {bool} -- If true, does fast mass evolution for the case of zeta=0, A=`A`. (default: {False})
-    
+
     Returns:
         np 1d array -- m/M array with appropriate mask
         integer -- number of host halos (M)
@@ -69,8 +71,11 @@ def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None,
         # Load extended core catalog
         cc = h5_read_dict(outfile, 'coredata')
 
-    idx_filteredsatcores, M, nHalo = SHMLM.core_mask(cc, M1, M2, s1=s1, disrupt=disrupt)
-    
+    if 'x' in cc.keys():
+        idx_filteredsatcores, M, X, Y, Z, nHalo = SHMLM.core_mask(cc, M1, M2, s1=s1, disrupt=disrupt, idx_m21=idx_m21)
+    else:
+        idx_filteredsatcores, M, nHalo = SHMLM.core_mask(cc, M1, M2, s1=s1, disrupt=disrupt, idx_m21=idx_m21)
+
     # m/M array for CMF
     if returnUnevolved:
         plot_arr = cc['infall_mass'][idx_filteredsatcores]/M
@@ -78,17 +83,19 @@ def CMF(outfile, M1, M2, s1=False, disrupt=None, returnUnevolved=False, cc=None,
         plot_arr = SHMLM.fast_m_evolved( cc['infall_mass'][idx_filteredsatcores]/M, cc['infall_step'][idx_filteredsatcores], A)
     else:
         plot_arr = cc['m_evolved'][idx_filteredsatcores]/M
-    
+
     return plot_arr, nHalo
 
-def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None, disrupt=None):
+def plotCMF(outfile, M1, M2, s1, returnUnevolved, label='', r=None, plotFlag=True, cc=None, normLogCnts=True, returnZeta0=False, A=None, disrupt=None, alpha=1, plotOptions='.', bins=100, idx_m21=None, retEbars=False, parr=None, nH=None):
     """Plot log/log plot of cores mass function (evolved or unevolved, given by `returnUnevolved`) with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
-    parr, nH = CMF(outfile, M1, M2, s1, disrupt, returnUnevolved, cc, returnZeta0, A)
-    return hist(np.log10(parr), bins=100, normed=True, plotFlag=plotFlag, label=label, alpha=1, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=normLogCnts)
+    if parr is None:
+        parr, nH = CMF(outfile, M1, M2, s1, disrupt, returnUnevolved, cc, returnZeta0, A, idx_m21=idx_m21)
+    print nH
+    return hist(np.log10(parr), bins=bins, normed=True, plotFlag=plotFlag, label=label, alpha=alpha, range=r, normScalar=nH, normCnts=False, normBinsize=True, normLogCnts=normLogCnts, plotOptions=plotOptions, retEbars=retEbars)
 
-def plotSHMF(M1, M2, r=None, label='subhalos', plotFlag=True, normLogCnts=True):
+def plotSHMF(M1, M2, r=None, label='subhalos', plotFlag=True, normLogCnts=True, partcut=False):
     """Plot log/log plot of subhalo mass function with 100 bins on log(m/M) range `r` and M range [`M1`, `M2`]."""
-    shmf, nH = SHMF(M1, M2)
+    shmf, nH = SHMF(M1, M2, partcut=partcut)
     return hist(np.log10(shmf), bins=100, normed=True, normBinsize=True, normCnts=False, normLogCnts=normLogCnts, normScalar=nH, plotFlag=plotFlag, label='subhalos', alpha=1, range=r)
 
 def SHMF_plot(outfile, M1, M2, bins, step):

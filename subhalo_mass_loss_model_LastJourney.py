@@ -1,3 +1,4 @@
+'''
 PARTICLES100MASS = 2.7e11 #h^-1 Msun
 BOXSIZE = 3400
 OMEGA_M = 0.310
@@ -6,6 +7,17 @@ THUBBLE = 9.78 #h^-1 Gyr
 LITTLEH = 0.6766
 OMEGA_0 = OMEGA_M #1.0
 DELTATFACTOR = 0.5
+'''
+SIMNAME = 'LJ'
+import itk
+PARTICLES100MASS = itk.SIMPARAMS[SIMNAME]['PARTICLEMASS']*100.
+BOXSIZE = itk.SIMPARAMS[SIMNAME]['Vi']
+OMEGA_M = itk.SIMPARAMS[SIMNAME]['OMEGA_M']
+OMEGA_L = itk.SIMPARAMS[SIMNAME]['OMEGA_L']
+LITTLEH = itk.SIMPARAMS[SIMNAME]['h']
+OMEGA_0 = OMEGA_M
+DELTATFACTOR = 0.5
+
 cc_data_dir = '/home/isultan/data/LastJourney/CoreCatalog_004_Reduced/'
 cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_LastJourney_localhost_dtfactor_0.5_run2/'
 AFID = 1.1

@@ -1,6 +1,6 @@
 from __future__ import division
 from __future__ import print_function
-
+'''
 PARTICLES100MASS = 4.637e9 #h^-1 Msun
 BOXSIZE = 250
 OMEGA_M = 0.310
@@ -17,6 +17,17 @@ PARTICLECUTMASS = PARTICLES100MASS*1
 SUBHALOMASSCUT = PARTICLES100MASS
 DELTATFACTOR = 0.5
 FIDUCIALPARTICLECUTMASS = PARTICLES100MASS*1
+'''
+SIMNAME = 'HM'
+import itk
+PARTICLES100MASS = itk.SIMPARAMS[SIMNAME]['PARTICLEMASS']*100.
+BOXSIZE = itk.SIMPARAMS[SIMNAME]['Vi']
+OMEGA_M = itk.SIMPARAMS[SIMNAME]['OMEGA_M']
+OMEGA_L = itk.SIMPARAMS[SIMNAME]['OMEGA_L']
+LITTLEH = itk.SIMPARAMS[SIMNAME]['h']
+OMEGA_0 = OMEGA_M
+DELTATFACTOR = 0.5
+
 cc_data_dir = '/home/isultan/data/ALCC/CoreCatalog/'
 cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_ALCC_localhost_dtfactor_0.5_infofmass_fitting/'
 

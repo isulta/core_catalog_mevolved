@@ -1,3 +1,4 @@
+'''
 PARTICLES100MASS = 1.148276e11 #h^-1 Msun
 BOXSIZE = 256
 OMEGA_M = 0.2647926998611387
@@ -16,6 +17,17 @@ DELTATFACTOR = 0.5
 FIDUCIALPARTICLECUTMASS = PARTICLES100MASS*1
 FIDUCIAL_A = 0.9
 FIDUCIAL_ZETA = 0.005
+'''
+SIMNAME = 'AQ'
+import itk
+PARTICLES100MASS = itk.SIMPARAMS[SIMNAME]['PARTICLEMASS']*100.
+BOXSIZE = itk.SIMPARAMS[SIMNAME]['Vi']
+OMEGA_M = itk.SIMPARAMS[SIMNAME]['OMEGA_M']
+OMEGA_L = itk.SIMPARAMS[SIMNAME]['OMEGA_L']
+LITTLEH = itk.SIMPARAMS[SIMNAME]['h']
+OMEGA_0 = OMEGA_M
+DELTATFACTOR = 0.5
+
 cc_data_dir = '/home/isultan/data/AlphaQ/core_catalog_merg/'
 cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_merg_fof_fitting_localhost_dtfactor_0.5_fiducial_A_0.9_zeta_0.005_FIDUCIALPARTICLECUTMASS_PARTICLES100MASS_spline_match_zbin_1.5_2/'
 

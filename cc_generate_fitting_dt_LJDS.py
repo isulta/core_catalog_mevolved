@@ -2,8 +2,8 @@ from __future__ import division
 import numpy as np
 import genericio as gio
 import h5py
-from scipy import spatial #KD Tree
-from itertools import combinations
+#from scipy import spatial #KD Tree
+#from itertools import combinations
 import subhalo_mass_loss_model_LJDS as SHMLM
 from itk import h5_write_dict, many_to_one, h5_read_dict
 
@@ -17,6 +17,8 @@ cc_output_dir = SHMLM.cc_output_dir
 A_arr = [0.4, 0.5, 0.6 , 0.7, 0.8, 0.9, 1.0, 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2.0, 2.1, 2.2, 2.3, 2.4]
 # zeta_arr = [0.001, 0.005, 0.01, 0.02, 0.04, 0.07, 0.08, 0.1, 0.125, 0.15, 0.175, 0.2]
 zeta_arr = [0.001, 0.005, 0.01, 0.02, 0.04, 0.07, 0.08, 0.1, 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275, 0.3]
+
+A_arr, zeta_arr = [1.1], [0.1]
 
 steps = SHMLM.steps
 
@@ -48,7 +50,9 @@ vars_cc = [
     'infall_sod_halo_angmom_y',
     'infall_sod_halo_angmom_z',
     'infall_sod_halo_mass',
-    'infall_fof_halo_mass'
+    'infall_fof_halo_mass',
+    'infall_sod_halo_cdelta',
+    'infall_sod_halo_radius'
 ]
 
 def fname_cc(step, mode):
@@ -69,7 +73,7 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
     Works  by computing mevolved for step+1 at each step and saving that in memory.
     """
     if writeOutputFlag:
-        print 'Reading data from {} and writing output to {}'.format(cc_data_dir, cc_output_dir)
+        print('Reading data from {} and writing output to {}'.format(cc_data_dir, cc_output_dir))
     cc = {}
     cc_prev = {}
 

@@ -1,4 +1,11 @@
-output*
-README_output.txt
-Makefile
+/output*/
 .vscode/
+*.pyc
+/247/
+/499/
+/cc_mevolved_LastJourney/
+/figs/
+/mmprog_figs/
+/wssimba.code-workspace
+/screenlog.0
+/my.log

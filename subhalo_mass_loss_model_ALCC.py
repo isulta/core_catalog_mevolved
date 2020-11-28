@@ -1,3 +1,6 @@
+from __future__ import division
+from __future__ import print_function
+
 PARTICLES100MASS = 4.637e9 #h^-1 Msun
 BOXSIZE = 250
 OMEGA_M = 0.310
@@ -15,7 +18,7 @@ SUBHALOMASSCUT = PARTICLES100MASS
 DELTATFACTOR = 0.5
 FIDUCIALPARTICLECUTMASS = PARTICLES100MASS*1
 cc_data_dir = '/home/isultan/data/ALCC/CoreCatalog/'
-cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_ALCC_localhost_dtfactor_0.5_fitting3/'
+cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_ALCC_localhost_dtfactor_0.5_infofmass_fitting/'
 
 import numpy as np
 import os
@@ -79,18 +82,22 @@ def convertA(A):
     """A conversion to fix delta_vir(0) != 178 discrepancy."""
     return A * (delta_vir(0)/178.)**0.5
 
-def m_evolved(m0, M0, step, step_prev, A=None, zeta=None, dtFactorFlag=False):
+def m_evolved(m0, M0, step, step_prev, A=None, zeta=None, dtFactorFlag=False, Mdeltavirfactor=False):
     """Sets Giocoli et al. 2008 fitting parameters if none given."""
     if A is None:
         A = 1.628/(2*LITTLEH)
         zeta = 0.06
-        print "A not defined!"
+        print("A not defined!")
     # A = convertA(A)
 
     z = step2z[step]
     delta_t = step2lookback[step_prev] - step2lookback[step]
     if dtFactorFlag:
         delta_t *= DELTATFACTOR
+
+    # Scales M0 if Mdeltavirfactor
+    if Mdeltavirfactor:
+        M0 *= delta_vir(z)/delta_vir(0)
 
     if zeta == 0:
         return m0 * np.exp( -delta_t/tau(z,A) )

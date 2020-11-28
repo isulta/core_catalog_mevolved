@@ -43,7 +43,8 @@ vars_cc_all = [
 vars_cc_min = [
     'core_tag',
     'tree_node_index',
-    'infall_tree_node_mass',
+    #'infall_tree_node_mass',
+    'infall_fof_halo_mass',
     'central',
     'host_core'
 ]
@@ -78,7 +79,7 @@ def m_evolved_col(A, zeta, next=False):
     else:
         return 'm_evolved_{}_{}'.format(A, zeta)
 
-def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLocalHost=False, checkpointRestart=None):
+def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLocalHost=False, checkpointRestart=None, Mdeltavirfactor=False, massvar='infall_tree_node_mass'):
     """
     Appends mevolved to core catalog and saves output in HDF5.
     Works  by computing mevolved for step+1 at each step and saving that in memory.
@@ -100,13 +101,13 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
 
             if virialFlag:
                 # Convert all mass to virial
-                cc['infall_tree_node_mass'] = SHMLM.m_vir(cc['infall_tree_node_mass'], step)
+                cc[massvar] = SHMLM.m_vir(cc[massvar], step)
         else:
             cc = h5_read_dict(fname_cc(checkpointRestart, 'output'), 'coredata')
 
         satellites_mask = cc['central'] == 0
         centrals_mask = cc['central'] == 1
-        # assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc['infall_tree_node_mass']), 'central flag not 0 or 1.'
+        # assert np.sum(satellites_mask) + np.sum(centrals_mask) == len(cc[massvar]), 'central flag not 0 or 1.'
         numSatellites = np.sum(satellites_mask)
 
         # Verify there are no satellites at first step
@@ -117,7 +118,7 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
         if checkpointRestart is None:
             for A in A_arr:
                 for zeta in zeta_arr:
-                    cc[m_evolved_col(A, zeta)] = np.zeros_like(cc['infall_tree_node_mass'])
+                    cc[m_evolved_col(A, zeta)] = np.zeros_like(cc[massvar])
         '''
         #cc['mergedCoreTag'] = np.zeros_like(cc['core_tag'])
         #cc['mergedCoreStep'] = np.zeros_like(cc['infall_step'])
@@ -145,8 +146,8 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
 
             # Initialize M array (corresponds with cc[satellites_mask]) to be host tree node mass of each satellite
             idx_m21 = many_to_one( cc['tree_node_index'][satellites_mask], cc['tree_node_index'][centrals_mask] )
-            #M, X, Y, Z = (cc[k][centrals_mask][idx_m21] for k in ['infall_tree_node_mass', 'x', 'y', 'z'])
-            M = cc['infall_tree_node_mass'][centrals_mask][idx_m21]
+            #M, X, Y, Z = (cc[k][centrals_mask][idx_m21] for k in [massvar, 'x', 'y', 'z'])
+            M = cc[massvar][centrals_mask][idx_m21]
 
             if checkpointRestart is None:
                 for A in A_arr:
@@ -157,9 +158,9 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
 
                         # Initialize m array (corresponds with cc[satellites_mask]) to be either infall_mass (step after infall) or m_evolved (subsequent steps).
                         initMask = cc[m_evolved_col(A, zeta)][satellites_mask] == 0
-                        minfall = cc['infall_tree_node_mass'][satellites_mask][initMask]
-                        cc[m_evolved_col(A, zeta)][ np.flatnonzero(satellites_mask)[initMask] ] = SHMLM.m_evolved(m0=minfall, M0=M[initMask], step=step, step_prev=steps[steps.index(step)-1], A=A, zeta=zeta, dtFactorFlag=True)
-                        # m = (cc[m_evolved_col(A, zeta)][satellites_mask] == 0)*cc['infall_tree_node_mass'][satellites_mask] + (cc[m_evolved_col(A, zeta)][satellites_mask] != 0)*cc[m_evolved_col(A, zeta)][satellites_mask]
+                        minfall = cc[massvar][satellites_mask][initMask]
+                        cc[m_evolved_col(A, zeta)][ np.flatnonzero(satellites_mask)[initMask] ] = SHMLM.m_evolved(m0=minfall, M0=M[initMask], step=step, step_prev=steps[steps.index(step)-1], A=A, zeta=zeta, dtFactorFlag=True, Mdeltavirfactor=Mdeltavirfactor)
+                        # m = (cc[m_evolved_col(A, zeta)][satellites_mask] == 0)*cc[massvar][satellites_mask] + (cc[m_evolved_col(A, zeta)][satellites_mask] != 0)*cc[m_evolved_col(A, zeta)][satellites_mask]
 
                         # Set m_evolved of satellites with m_evolved=0 to infall mass.
                         # cc[m_evolved_col(A, zeta)][satellites_mask] = m
@@ -174,7 +175,7 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
             Delta_x = ((x[c1]-x[c2])**2 + (y[c1]-y[c2])**2 + (z[c1]-z[c2])**2)**0.5
             Delta_v = ((cc['vx'][c1]-cc['vx'][c2])**2 + (cc['vy'][c1]-cc['vy'][c2])**2 + (cc['vz'][c1]-cc['vz'][c2])**2)**0.5
 
-            mass1bigger = cc['infall_tree_node_mass'][c1] > cc['infall_tree_node_mass'][c2]
+            mass1bigger = cc[massvar][c1] > cc[massvar][c2]
             massbiggeridx = np.where(mass1bigger, c1, c2)
             masssmalleridx = np.where(mass1bigger, c2, c1)
             sigma_x = 3*cc['radius'][massbiggeridx]
@@ -207,18 +208,18 @@ def create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLoca
 
             for A in A_arr:
                 for zeta in zeta_arr:
-                    cc_prev[m_evolved_col(A, zeta, next=True)] = np.zeros_like(cc['infall_tree_node_mass'])
+                    cc_prev[m_evolved_col(A, zeta, next=True)] = np.zeros_like(cc[massvar])
 
                     if numSatellites != 0: # If there are satellites (not applicable for first step)
                         m = cc[m_evolved_col(A, zeta)][satellites_mask]
                         if useLocalHost:
                             Mlocal = cc[m_evolved_col(A, zeta)][localhost_m21]
                             M_A_zeta = (Mlocal==0)*M + (Mlocal!=0)*Mlocal
-                            cc_prev[m_evolved_col(A, zeta, next=True)][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M_A_zeta, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta)
+                            cc_prev[m_evolved_col(A, zeta, next=True)][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M_A_zeta, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta, Mdeltavirfactor=Mdeltavirfactor)
                         else:
-                            cc_prev[m_evolved_col(A, zeta, next=True)][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta)
+                            cc_prev[m_evolved_col(A, zeta, next=True)][satellites_mask] = SHMLM.m_evolved(m0=m, M0=M, step=steps[steps.index(step)+1], step_prev=step, A=A, zeta=zeta, Mdeltavirfactor=Mdeltavirfactor)
 
     return cc
 
 if __name__ == '__main__':
-    create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLocalHost=True, checkpointRestart=None)
+    create_core_catalog_mevolved(virialFlag=False, writeOutputFlag=True, useLocalHost=True, checkpointRestart=None, Mdeltavirfactor=False, massvar='infall_fof_halo_mass')

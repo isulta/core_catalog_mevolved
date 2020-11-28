@@ -84,7 +84,7 @@ def m_evolved_helper(m0, M0, step, step_prev, A, zeta, dtFactorFlag):
     if A is None:
         A = 1.628/(2*LITTLEH)
         zeta = 0.06
-        print "A not defined!"
+        print("A not defined!")
     # A = convertA(A)
 
     z = step2z[step]

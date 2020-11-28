@@ -15,7 +15,8 @@ SUBHALOMASSCUT = PARTICLES100MASS
 DELTATFACTOR = 0.5
 FIDUCIALPARTICLECUTMASS = PARTICLES100MASS*1
 cc_data_dir = '/home/isultan/data/LJDS/CoreCatalog/'
-cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_LJDS_localhost_dtfactor_0.5_fitting2/'
+# cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_LJDS_localhost_dtfactor_0.5_fitting2/'
+cc_output_dir = '/home/isultan/projects/halomassloss/core_catalog_mevolved/output_SV_localhost_dtfactor_0.5_sod/'
 
 import numpy as np
 import os
@@ -84,7 +85,7 @@ def m_evolved(m0, M0, step, step_prev, A=None, zeta=None, dtFactorFlag=False):
     if A is None:
         A = 1.628/(2*LITTLEH)
         zeta = 0.06
-        print "A not defined!"
+        print("A not defined!")
     # A = convertA(A)
 
     z = step2z[step]

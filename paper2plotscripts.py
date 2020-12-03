@@ -1,12 +1,11 @@
 CC_HOST_VARS = [ ('M', 'infall_fof_halo_mass'), ('X', 'x'), ('Y', 'y'), ('Z', 'z'), ('CORETAG', 'core_tag'), ('CDELTA', 'infall_sod_halo_cdelta'), ('Mtn', 'infall_tree_node_mass') ]
 
 def load_data(step):
-    sh_vars = ['fof_halo_tag','subhalo_mean_x','subhalo_mean_y','subhalo_mean_z','subhalo_mean_vx', 'subhalo_mean_vy', 'subhalo_mean_vz', 'subhalo_count', 'subhalo_tag', 'subhalo_mass']
+    sh_vars = ['fof_halo_tag','subhalo_mean_x','subhalo_mean_y','subhalo_mean_z','subhalo_mean_vx', 'subhalo_mean_vy', 'subhalo_mean_vz', 'subhalo_count', 'subhalo_tag', 'subhalo_mass', 'fof_halo_count']
     hp_vars = ['fof_halo_tag', 'fof_halo_mass', 'fof_halo_center_x', 'fof_halo_center_y', 'fof_halo_center_z']
 
     cc_HM = h5_read_dict('/home/isultan/projects/halomassloss/core_catalog_mevolved/output_ALCC_localhost_dtfactor_0.5_fitting3/{}.corepropertiesextend.hdf5'.format(step), 'coredata')
-    sh_HM = gio_read_dict('/home/isultan/data/ALCC/subhalos/STEP{0}/m000p-{0}.subhaloproperties'.format(step), sh_vars)
-    hp_HM = gio_read_dict('/home/isultan/data/ALCC/subhalos/STEP{0}/m000p-{0}.haloproperties'.format(step), hp_vars)
+    sh_HM = h5_read_dict(f'/home/isultan/data/SHfindertests/HM_final/subhalos_HM_{step}.hdf5', 'subhalos')
 
     cc_SV = h5_read_dict('/home/isultan/projects/halomassloss/core_catalog_mevolved/output_LJDS_localhost_dtfactor_0.5_fitting2/m000p-{}.corepropertiesextend.hdf5'.format(step), 'coredata')
     cc_SV['infall_sod_halo_cdelta'] = gio.gio_read('/home/isultan/data/LJDS/CoreCatalog/m000p-{}.coreproperties'.format(step), 'infall_sod_halo_cdelta')[0]
@@ -15,13 +14,12 @@ def load_data(step):
 
     cc_AQ = h5_read_dict('/home/isultan/projects/halomassloss/core_catalog_mevolved/output_newdata_localhost_dtfactor_0.5_rev4070_v3/{}.corepropertiesextend.hdf5'.format(step), 'coredata')
     sh_AQ = gio_read_dict('/home/isultan/data/AlphaQ/100P/m000-{}.subhaloproperties'.format(step), sh_vars)
-    hp_AQ = gio_read_dict('/home/isultan/data/AlphaQ/100P/m000-{}.haloproperties'.format(step), hp_vars)
+    
+    for sh, label in [ (sh_HM, 'HM'), (sh_SV, 'SV'), (sh_AQ, 'AQ') ]:
+        sh['M'] = sh['fof_halo_count']*PARTICLEMASS[label]
 
-    print( len(np.unique(hp_HM['fof_halo_tag']))/len(hp_HM['fof_halo_tag'])*100 )
-
-    for sh, hp, assert_x0_unique in [ (sh_HM, hp_HM, False), (sh_SV, hp_SV, True), (sh_AQ, hp_AQ, True) ]:
+    for sh, hp, assert_x0_unique in [ (sh_SV, hp_SV, True) ]:
         idx_m21_sh = many_to_one(sh['fof_halo_tag'], hp['fof_halo_tag'], assert_x0_unique=assert_x0_unique)
-        sh['M'] = hp['fof_halo_mass'][idx_m21_sh]
         sh['X'] = hp['fof_halo_center_x'][idx_m21_sh]
         sh['Y'] = hp['fof_halo_center_y'][idx_m21_sh]
         sh['Z'] = hp['fof_halo_center_z'][idx_m21_sh]
@@ -164,18 +162,16 @@ def resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask
                 axr.axvline( np.log10(100*PARTICLEMASS[label]/Mavg_sh), ls='--', label=r'$\log \left(\mathrm{100m_{p,'+label+ r'}/\langle M \rangle}\right)$', c=c )
         if mplot and fixedAxis:
             ax.set_ylim(-3,3.6) #CHANGE
-            axr.set_ylim(-1,3.95) #CHANGE
             ax.set_xlim(9,12.95)
         elif fixedAxis: #finalized for res0,1 plots
-            ax.set_ylim(-3,4)
-            axr.set_ylim(-0.5,4.95)
+            ax.set_ylim(-2.3,3.8)
             ax.set_xlim(-5,-0.5)
 
         if smallRatioYaxis:
             # axr.axhline(0.0)
             # axr.axhline(1.95)
             axr.set_ylim(0.0,1.95)
-
+    print('ax1 YLIM', ax1.get_ylim())
     ax1.legend(loc=3)
     ax4.legend(loc=2)
     if mplot:

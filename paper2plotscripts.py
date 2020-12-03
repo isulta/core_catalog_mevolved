@@ -311,7 +311,7 @@ def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False):
 
 def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2dict, bins=20, mlim=0, mplot=False, outfile=None, avgchi2=False, zlabel=None, fixedAxis=False, legendFlag=True, bfparamslabelFlag=False):
     alpha = 1.0
-    fixedylim = {12:(-1.6, 0.0), 13:(-0.64, 0.8), 14:(-0.64, 1.78)} #verified min/max for z=0 and z=1
+    fixedylim = {12:(-1.6, 0.0), 13:(-0.64, 0.83), 14:(-0.65, 1.8)} #verified min/max for z=0 and z=1
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharex=False, sharey=False, gridspec_kw={'hspace': 0, 'wspace': .15}, figsize=[4.8*3,4.8*1], dpi=150)
     for Mlabel, ax in zip( (12, 13, 14), (ax1, ax2, ax3) ):

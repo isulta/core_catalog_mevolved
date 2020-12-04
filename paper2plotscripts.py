@@ -546,3 +546,32 @@ def hostbins_wide(cc, centrals_mask, M1_th, M2_th, verbose=False, s1=False, Nhal
     Mavg = np.mean(cim[:Nhalos][idxun])
     Nhalos = len(valun)
     return bin_mask, Mavg, Nhalos #TODO 10^4 cutoff doesn't work for fragments z=1
+
+### Host halo concentration effects ###
+def concentration_plot(cc, centrals_mask, sh, h1, h2, Med_cdelta, A=AFID, zeta=ZETAFID, label='SV', mlim=OBJECTMASSCUT['SV'], mplot=True, bins=25):
+    r = (np.log10(mlim),13) if mplot else (-3,0)
+
+    fig, ax = plt.subplots(1, sharex='all', sharey='row', figsize=[4.8*1,4.8*1], dpi=150)
+    for h, marker, plabel in zip( (h1, h2), ('o', 's'), ('($c_{200c}\le'+str(round(Med_cdelta,2))+'$)', '($c_{200c}>'+str(round(Med_cdelta,2))+'$)') ):
+        bin_mask = (~centrals_mask)&np.isin(cc['fof_halo_tag'], h)&(cc[m_evolved_col(A, zeta)]>mlim)
+        nH_cores_h = len(h)
+        
+        bin_mask_sh = (sh['subhalo_tag']!=0)&np.isin(sh['fof_halo_tag'], h)&(sh['subhalo_mass']>mlim)
+        nH_sh_h = len(np.unique( sh['fof_halo_tag'][np.isin(sh['fof_halo_tag'], h)] ))
+        
+        assert nH_cores_h==nH_sh_h, 'Different number of hosts for subhalos and cores for concentration bin'
+        print('nH_h, sh\t', nH_cores_h)
+
+        parr = cc[m_evolved_col(A, zeta)][bin_mask] / (1.0 if mplot else cc[Mvar][bin_mask])
+        x, y, yerr, yerr_log = hist(np.log10(parr), bins=bins, normed=True, plotFlag=False, range=r, normScalar=nH_cores_h, normBinsize=True, normLogCnts=True, retEbars=True)
+        errorbar(ax, x, y, yerr=yerr_log, label='Cores '+plabel, marker=marker)
+        
+        parr_sh = sh['subhalo_mass'][bin_mask_sh] / (1.0 if mplot else sh['M'][bin_mask_sh])
+        x_sh, y_sh, yerr_sh, yerr_log_sh = hist(np.log10(parr_sh), bins=bins, normed=True, plotFlag=False, range=r, normScalar=nH_sh_h, normBinsize=True, normLogCnts=True, retEbars=True)
+        errorbar(ax, x_sh, y_sh, yerr=yerr_log_sh, label='Subhalos '+plabel, marker=marker)
+
+    ax.set_xlabel(r'$\log(m)$' if mplot else r'$\log(m/M)$')
+    ax.set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m) \right]$' if mplot else r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m/M) \right]$')
+    # ax.set_title(r'{} $\le \log \left[ M / \left(h^{{-1}}M_\odot \right) \right] \le$ {}'.format(np.log10(M1), np.log10(M2)), y=0.9)
+    ax.legend(loc=3)
+    print('xlim', ax.get_xlim())

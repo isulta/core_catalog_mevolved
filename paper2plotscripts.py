@@ -449,6 +449,7 @@ def contour_matched_m(matched_m_cores, matched_m_sh, M1, M2, bins=20, density=Tr
 
     fig.axes[0].tick_params(which='both', color='w')
     fig.axes[0].set_aspect('equal')
+    fig.axes[0].set_yticks(fig.axes[0].get_xticks()[1:-1])
 
 def histogram_matched_m(matched_ifhm_cores, matched_m_sh, matched_m_cores, M1, M2, bins=100, r=(0.0, 2.1), alpha=0.3, density=True, legend=False, ylim=(0.,3.7)):
     plt.figure()

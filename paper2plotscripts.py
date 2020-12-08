@@ -576,3 +576,125 @@ def concentration_plot(cc, centrals_mask, sh, h1, h2, Med_cdelta, A=AFID, zeta=Z
     # ax.set_title(r'{} $\le \log \left[ M / \left(h^{{-1}}M_\odot \right) \right] \le$ {}'.format(np.log10(M1), np.log10(M2)), y=0.9)
     ax.legend(loc=3)
     print('xlim', ax.get_xlim())
+
+### Fig1 ###
+def hosts_in_sh(sod, sh, SHMLM, z, ra_list=[(10**12.0, 10**12.5), (10**13.0, 10**13.5), (10**14.0, 10**14.5)], printNoMissing=False):
+    '''Finds host halos in the sod catalog with c>0 in the defined mass bins that are missing from the subhalo catalog.'''
+    assert (sod['sod_halo_cdelta']!=0).all(), 'c==0 exists!'
+    assert len(np.unique(sod['fof_halo_tag']))==len(sod['fof_halo_tag']), 'sod halos are not unique!'
+    sod_pc = {k:sod[k][sod['sod_halo_cdelta']>0].copy() for k in sod}
+
+    sod_pc['M200_to_Mvir'] = M200_to_Mvir(sod_pc['sod_halo_mass'], sod_pc['sod_halo_cdelta'], SHMLM, z)
+    
+    for ra in ra_list:
+        ra_inrange = inrange(sod_pc['M200_to_Mvir'], ra)
+        nH_ra = np.sum(ra_inrange)
+        missing_ra_mask = ~np.isin(sod_pc['fof_halo_tag'][ra_inrange], sh['fof_halo_tag'])
+        N_missing_ra = np.sum(missing_ra_mask)
+        if printNoMissing or (N_missing_ra>0):
+            print(f'For bin {np.log10(ra)}, there are {N_missing_ra} missing host halos.', end=' ')
+            print(f'This is {N_missing_ra/nH_ra*100}% of the {nH_ra} host halos in this bin (for which c>0).')
+            print(f"Missing halos (fof_halo_tag): {sod_pc['fof_halo_tag'][ra_inrange][missing_ra_mask]}")
+            print(f"Missing halos (log10 fof_halo_mass): {np.log10(sod_pc['fof_halo_mass'][ra_inrange][missing_ra_mask])}")
+            print(f"Missing halos (log10 sod_halo_mass): {np.log10(sod_pc['sod_halo_mass'][ra_inrange][missing_ra_mask])}")
+            print(f"Missing halos (log10 M200_to_Mvir): {np.log10(sod_pc['M200_to_Mvir'][ra_inrange][missing_ra_mask])}\n")
+
+def sh_Mfof_convert(sh, fof_halo_tag, sod_halo_cdelta, sod_halo_mass, SHMLM, assert_x0_unique=True, z=0, step=499, b=0.168, Delta=200):
+    isin_clookup = np.isin(sh['fof_halo_tag'], fof_halo_tag)
+    assert np.all(isin_clookup)
+    print(f"Subhalos with host in cdelta lookup table: {isin_clookup.sum()/len(sh['fof_halo_tag'])*100}% of all subhalos")
+    # print(f"Corresponding halos with tag in cdelta lookup table: {len(np.unique(sh['fof_halo_tag'][isin_clookup]))/len(np.unique(sh['fof_halo_tag']))*100}% of unique halos")
+    # missingM = sh['M'][np.unique(sh['fof_halo_tag'][~isin_clookup], return_index=True)[1]]
+    assert (sod_halo_cdelta!=0).all(), 'c=0 exists'
+    m21_clookup = many_to_one(sh['fof_halo_tag'][isin_clookup], fof_halo_tag, assert_x0_unique=assert_x0_unique)
+    CDELTA = sod_halo_cdelta[m21_clookup]
+    print(f'subhalos (including centrals) found in sod catalog that have negative c: {(CDELTA<0).sum()} out of {len(CDELTA)} ({(CDELTA<0).sum()/len(CDELTA)*100} %)')
+    sh_res = {k:sh[k][isin_clookup][CDELTA>0].copy() for k in sh.keys()}
+    sh_res['CDELTA'] = CDELTA[CDELTA>0]
+    
+    sh_res['Mfof_to_M200'] = Mfof_to_Mso(SHMLM, z, sh_res['CDELTA'], sh_res['M'], b, Delta)
+    sh_res['Mfof_to_M200_to_Mvir'] = SHMLM.m_vir(sh_res['Mfof_to_M200'], step)
+    sh_res['M200'] = sod_halo_mass[m21_clookup][CDELTA>0]
+    print(sh_res['CDELTA'].min(), sh_res['CDELTA'].max())
+    sh_res['M200_to_Mvir'] = M200_to_Mvir(sh_res['M200'], sh_res['CDELTA'], SHMLM, z)
+    print()
+    return sh_res
+
+def A_c(c):
+    return np.log(1+c) - c/(1+c)
+
+def Mfof_to_Mso(SHMLM, z, c, Mfof, b, Delta):
+    Delta_ISO = 3/(2*np.pi*b**3)*SHMLM.Omega(z)
+    Mfof_Mdelta_factor = 1/A_c(c) * ( np.log(c) + 1/3*np.log(Delta/(3*A_c(c)*Delta_ISO)) + 1/c*(Delta/(3*A_c(c)*Delta_ISO))**(-1/3) - 1 )
+    return Mfof/Mfof_Mdelta_factor
+
+def f_xvir(xvir, c200, Delta):
+    return 1/A_c(c200)*(np.log(1+c200*xvir) - c200*xvir/(1+c200*xvir)) - Delta/200*(xvir**3)
+
+def M200_to_Mvir(M200, c200, SHMLM, z):
+    xf = np.linspace(2,20, 50)
+    rootres_int = root(f_xvir, args=(xf, SHMLM.delta_vir(z)), x0=np.ones_like(xf))
+    assert rootres_int.success, 'root finder failed'
+    yf = rootres_int.x
+    fin = interp1d(xf, yf, fill_value='extrapolate')
+    
+    valun, invun = np.unique(c200, return_inverse=True)
+    assert (valun!=0).all()
+    nullmask = (valun<0)
+    
+    xvir = np.zeros_like(valun, dtype=type(M200[0]))
+    xvir[~nullmask] = fin(valun[~nullmask])
+    xvir[nullmask] = 0
+    xvir = xvir[invun]
+    return M200 * xvir**3 * SHMLM.delta_vir(z)/200
+
+def sh_finder_comparison(
+    sh_HM, sh_SV, sh_AQ, Mvar, setoriglims=True, computeRatioFromSHMF=False, addFiducialModels=False, addvlinelim=False, vlinepartlim=50., binwidth=0.5):
+    r = (-3,0)
+    bins = 30
+    alpha = 1.0
+
+    fig, ((ax1, ax2, ax3),(ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='all', sharey='row', gridspec_kw={'hspace': 0, 'wspace': 0, 'height_ratios': [2, 1]}, figsize=[4.8*3,4.8*1.5], dpi=150)
+    fig5_plot(None, ax3, legendFlag=True)
+    ax3.legend(loc=3)
+    for logM1, ax, axr in zip((12, 13, 14), (ax1, ax2, ax3), (ax4, ax5, ax6)):
+        M1, M2 = 10**logM1, 10**(logM1+binwidth)
+        ax.set_title(r'{} $\le \log \left[ M / \left(h^{{-1}}M_\odot \right) \right] \le$ {}'.format(logM1+0.0, logM1+binwidth), y=0.9)
+        if addFiducialModels:
+            if ax == ax1:
+                ax.plot(np.linspace(*r, 100), fitting_model(np.linspace(*r, 100), logM1), '--', color='k', lw=1, label="Fiducial function (Equation 1)")
+                ax.legend(loc=3)
+            else: 
+                ax.plot(np.linspace(*r, 100), fitting_model(np.linspace(*r, 100), logM1), '--', color='k', lw=1)
+        for sh, label, marker, c in zip([sh_HM, sh_SV, sh_AQ], ['HM', 'SV', 'AQ'], ['s', 'o', 'D'], COLOR_SCHEME[:3]):
+            x, y, yerr, yerr_log, nH_sh, Mavg_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=SUBHALOMINMASS[label], Mvar=Mvar, returnMavg=True)
+
+            errorbar(ax, x, y, yerr=yerr_log, label=f'Subhalos {label}', marker=marker, alpha=alpha, c=c)
+            errorbar(axr, x, 10**(y-fitting_model(x, logM1)), yerr=yerr/10**fitting_model(x, logM1), marker=marker, alpha=alpha, zerocut=True, c=c)
+
+            axr.axhline(1, c='k',ls='--', lw='1', zorder=-2)
+            if label=='SV' and addvlinelim and (ax!=ax3):
+                vlinelim = np.log10(vlinepartlim*PARTICLEMASS[label]/Mavg_sh) 
+                print('SV lim:', vlinelim)
+                ax.axvline(  vlinelim, ymax=0.9, ls=':', c=c, alpha=.7 )
+                axr.axvline( vlinelim, ls=':', label=r'$\log \left(\mathrm{'+str(int(vlinepartlim))+r'm_{p,'+label+ r'}/\langle M_{'+label+r'} \rangle}\right)$', c=c, alpha=.7 )
+                if axr==ax4:
+                    axr.legend(loc=2)
+
+        if ax == ax2:
+            ax.legend(loc=3)
+        fig5_plot(logM1, ax)
+        fig5_plot(logM1, axr, ratioFlag=True, computeRatioFromSHMF=computeRatioFromSHMF)
+    ax5.set_xlabel(r'$\log(m/M)$')
+    ax1.set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m/M) \right]$')
+    ax4.set_ylabel(r'ratio')
+    if setoriglims:
+        ax1.set_ylim(-3.4, 1.7)
+        ax4.set_ylim(-0.2, 3.4)
+        ax1.set_xlim(-3.2,0)
+    else:
+        ax1.set_ylim(-3.4, 1.71)
+        ax4.set_ylim(-0.2, 2.2)
+    print('ax1 ylim', ax1.get_ylim())
+    print('ax4 ylim', ax4.get_ylim())
+    print('ax1 xlim', ax1.get_xlim())

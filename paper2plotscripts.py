@@ -183,13 +183,12 @@ def resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask
     ax4.set_ylabel(r'ratio')
 
     if zlabel:
-        # ax1.text(-4.75,2.5,zlabel, fontsize=12)
         ax1.text(r[0]+0.25,2.5,zlabel, fontsize=12)
 
-def paramscan_resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask_SV, mplot, outfile, ccMvar='M', ):
+def paramscan_resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask_SV, mplot, outfile, ccMvar='M', fixedAxis=True, zlabel=None, smallRatioYaxis=False):
     for i, A in enumerate(tqdm(A_arr)):
         for j, zeta in enumerate(zeta_arr):
-            resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask_SV, mplot, A, zeta, ccMvar)
+            resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask_SV, mplot, A, zeta, ccMvar, fixedAxis, zlabel, smallRatioYaxis)
             plt.savefig(outfile + '_{}_{}.png'.format(A, zeta)) #'/home/isultan/projects/halomassloss/core_catalog_mevolved/Paper2Figs/paramexploration_mplot/z1_{}_{}.png'.format(A, zeta)
             plt.close()
 

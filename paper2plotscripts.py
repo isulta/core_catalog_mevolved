@@ -270,7 +270,7 @@ def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bin
         print('')
     return ReducedChi2dict
 
-def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2):
+def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialparams):
     plt.figure()
     plt.pcolormesh(zeta_arr, A_arr, ReducedChi2, cmap=plt.cm.jet)#, vmin=0.9240790129278156, vmax=542.9304287245984)
     cb = plt.colorbar()
@@ -283,6 +283,8 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2):
     mask_ReducedChi2 = mask_ReducedChi2_gen(ReducedChi2)
 
     plt.plot(zetabf, Abf, 'x', ms=10, zorder=5, c='w')
+    if markfiducialparams:
+        plt.plot(ZETAFID, AFID, '*', ms=10, zorder=5, c='w')
 
     mask_ReducedChi2_marr = np.ma.masked_equal(mask_ReducedChi2, False)
     plt.pcolormesh(zeta_arr, A_arr, mask_ReducedChi2_marr, cmap='binary', alpha=.3)
@@ -302,11 +304,11 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2):
     if outfile:
         plt.savefig(outfile)
 
-def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False):
+def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False, markfiducialparams=False):
     for Mlabel in sorted(M1dict.keys()):
         ReducedChi2 = ReducedChi2dict[Mlabel]
         M1, M2 = M1dict[Mlabel], M2dict[Mlabel]
-        pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile=(f'{outfile}_{Mlabel}.pdf' if outfile else None), avgchi2=avgchi2)
+        pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, (f'{outfile}_{Mlabel}.pdf' if outfile else None), avgchi2, markfiducialparams)
 
 def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2dict, bins=20, mlim=0, mplot=False, outfile=None, avgchi2=False, zlabel=None, fixedAxis=False, legendFlag=True, bfparamslabelFlag=False):
     alpha = 1.0

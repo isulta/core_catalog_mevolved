@@ -270,9 +270,10 @@ def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bin
         print('')
     return ReducedChi2dict
 
-def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialparams):
+def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialparams, ReducedChi2_outline0, ReducedChi2_outline1):
     plt.figure()
-    plt.pcolormesh(zeta_arr, A_arr, ReducedChi2, cmap=plt.cm.jet)
+    ax = plt.gca()
+    plt.pcolormesh(zeta_arr, A_arr, ReducedChi2, cmap=plt.cm.jet, shading='nearest')
     cb = plt.colorbar()
     cb.set_label(r'$\langle\chi^2_{\mathrm{dof}}\rangle$' if avgchi2 else r'$\chi^2_{\mathrm{dof}}$')
 
@@ -287,7 +288,24 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialpa
         plt.plot(ZETAFID, AFID, '*', ms=10, zorder=5, c='w')
 
     mask_ReducedChi2_marr = np.ma.masked_equal(mask_ReducedChi2, False)
-    plt.pcolormesh(zeta_arr, A_arr, mask_ReducedChi2_marr, cmap='binary', alpha=.3)
+    plt.pcolormesh(zeta_arr, A_arr, mask_ReducedChi2_marr, cmap='binary', alpha=.3, shading='nearest')
+
+    for ReducedChi2_outline, c_outln, hs, ls in zip((ReducedChi2_outline0, ReducedChi2_outline1), (COLOR_SCHEME[3],COLOR_SCHEME[-1]), ('///','\\\\\\'), ('-','--')):
+        if ReducedChi2_outline is not None:
+            mask_ReducedChi2_outline = mask_ReducedChi2_gen(ReducedChi2_outline)
+            ax.add_collection(LineCollection(binaryarray_outline(mask_ReducedChi2_outline, zeta_arr, A_arr), linewidths=1.5, colors=c_outln, linestyle=ls))
+            # Hatch plot
+            # plt.rcParams['hatch.color'] = '#808080'
+            # mask_ReducedChi2_marr_outline = np.ma.masked_equal(mask_ReducedChi2_outline, False)
+            # ax.pcolor(zeta_arr, A_arr, mask_ReducedChi2_marr_outline, shading='nearest', cmap='binary', hatch=hs, alpha=0)
+    
+    # optional tick marks that are at the parameter search grid points
+    '''plt.xticks(zeta_arr,rotation=60, fontsize=10)
+    plt.yticks(A_arr)
+    ax.tick_params(which='minor', length=0)
+    [l.set_visible(False) for (i,l) in enumerate(ax.xaxis.get_ticklabels()) if i % 2 != 0]
+    [l.set_visible(False) for (i,l) in enumerate(ax.yaxis.get_ticklabels()) if i % 2 != 0]'''
+    ax.tick_params(axis='y', which='both', color='w')
 
     plt.xlabel('$\zeta$')
     plt.ylabel('$\mathcal{A}$')
@@ -304,11 +322,13 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialpa
     if outfile:
         plt.savefig(outfile)
 
-def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False, markfiducialparams=False):
+def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False, markfiducialparams=False, ReducedChi2dict_outline0=None, ReducedChi2dict_outline1=None):
     for Mlabel in sorted(M1dict.keys()):
         ReducedChi2 = ReducedChi2dict[Mlabel]
         M1, M2 = M1dict[Mlabel], M2dict[Mlabel]
-        pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, (f'{outfile}_{Mlabel}.pdf' if outfile else None), avgchi2, markfiducialparams)
+        ReducedChi2_outline0 = ReducedChi2dict_outline0[Mlabel] if ReducedChi2dict_outline0 else None
+        ReducedChi2_outline1 = ReducedChi2dict_outline1[Mlabel] if ReducedChi2dict_outline1 else None
+        pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, (f'{outfile}_{Mlabel}.pdf' if outfile else None), avgchi2, markfiducialparams, ReducedChi2_outline0, ReducedChi2_outline1)
 
 def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2dict, bins=20, mlim=0, mplot=False, outfile=None, avgchi2=False, zlabel=None, fixedAxis=False, legendFlag=True, bfparamslabelFlag=False):
     alpha = 1.0

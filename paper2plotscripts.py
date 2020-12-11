@@ -272,7 +272,7 @@ def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bin
 
 def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialparams):
     plt.figure()
-    plt.pcolormesh(zeta_arr, A_arr, ReducedChi2, cmap=plt.cm.jet)#, vmin=0.9240790129278156, vmax=542.9304287245984)
+    plt.pcolormesh(zeta_arr, A_arr, ReducedChi2, cmap=plt.cm.jet)
     cb = plt.colorbar()
     cb.set_label(r'$\langle\chi^2_{\mathrm{dof}}\rangle$' if avgchi2 else r'$\chi^2_{\mathrm{dof}}$')
 

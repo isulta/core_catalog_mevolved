@@ -570,7 +570,36 @@ def hostbins_wide(cc, centrals_mask, M1_th, M2_th, verbose=False, s1=False, Nhal
     return bin_mask, Mavg, Nhalos #TODO 10^4 cutoff doesn't work for fragments z=1
 
 ### Host halo concentration effects ###
-def concentration_plot(cc, centrals_mask, sh, h1, h2, Med_cdelta, A=AFID, zeta=ZETAFID, label='SV', mlim=OBJECTMASSCUT['SV'], mplot=True, bins=25):
+def host_concentration_bins_gen(sod, M1, M2):
+    '''Given an `sod` halo catalog, splits the halos with `fof_halo_mass` in [`M1`, `M2`] and c>0 into two `sod_halo_cdelta` (i.e. c) bins.
+    `Med_cdelta` is the median c of the positive concentration halos in the mass bin.
+    `h1` is array of `fof_halo_tag`s of positive concentration halos in the mass bin with c <= `Med_cdelta`.
+    `h2` is array of `fof_halo_tag`s of positive concentration halos in the mass bin with c > `Med_cdelta`.
+    '''
+    assert not np.any(sod['sod_halo_cdelta']==0), 'cdelta==0 exists'
+
+    mbin_mask = inrange(sod['fof_halo_mass'], (M1, M2))
+    nH_mbin = np.sum(mbin_mask)                           # Number of halos in mass bin
+
+    mbin_posc_mask = mbin_mask&(sod['sod_halo_cdelta']>0) # Halos in mass bin with cdelta>0
+    nH_mbin_posc = np.sum(mbin_posc_mask)                 # Number of such halos
+
+    print(f"In the {np.log10((M1,M2))} mass bin, there are {nH_mbin_posc:,} halos with cdelta>0 out of {nH_mbin:,} halos ({nH_mbin_posc/nH_mbin*100}%).")
+
+    Med_cdelta = np.median( sod['sod_halo_cdelta'][mbin_posc_mask] )
+    print(f'Median cdelta (in cdelta>0 mass bin): {Med_cdelta}')
+    print('range(cdelta)', np.min(sod['sod_halo_cdelta'][mbin_posc_mask]), np.max(sod['sod_halo_cdelta'][mbin_posc_mask]))
+
+    half1_mask = sod['sod_halo_cdelta'][mbin_posc_mask] <= Med_cdelta
+    h1 = sod['fof_halo_tag'][mbin_posc_mask][half1_mask]
+    h2 = sod['fof_halo_tag'][mbin_posc_mask][~half1_mask]
+
+    print(f'Concentration bin 1 (cdelta <= Med_cdelta) contains {len(h1):,} host halos.')
+    print(f'Concentration bin 2 (cdelta > Med_cdelta) contains {len(h2):,} host halos.')
+    
+    return h1, h2, Med_cdelta
+
+def concentration_plot(cc, centrals_mask, sh, h1, h2, Med_cdelta, A=AFID, zeta=ZETAFID, mlim=OBJECTMASSCUT['SV'], mplot=True, bins=25):
     r = (np.log10(mlim),13) if mplot else (-3,0)
 
     fig, ax = plt.subplots(1, sharex='all', sharey='row', figsize=[4.8*1,4.8*1], dpi=150)

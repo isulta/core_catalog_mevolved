@@ -120,8 +120,9 @@ def errorbar(ax, x, y, yerr, label='', marker='o', alpha=1, c=None, zerocut=Fals
     ax.errorbar(x, y, yerr, label=label, marker=marker, ls='', mec='k', alpha=alpha, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=c )
     #ax.errorbar(x, y, yerr, label=label, marker=None, ls='-', mec='k', alpha=alpha, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=c )
 
-def resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask_SV, mplot=False, A=None, zeta=None, ccMvar='M', fixedAxis=True, zlabel=None, smallRatioYaxis=False, assert_nH=True):
-    r = (9,13) if mplot else (-5,-0.5)
+def resolution_tests(cc_HM, sh_HM, centrals_mask_HM, cc_SV, sh_SV, centrals_mask_SV, mplot=False, A=None, zeta=None, ccMvar='M', fixedAxis=True, zlabel=None, smallRatioYaxis=False, assert_nH=True, r=None):
+    if r is None:
+        r = (9,13) if mplot else (-5,-0.5)
     bins = 40
 
     fig, ((ax1, ax2, ax3),(ax4, ax5, ax6)) = plt.subplots(2, 3, sharex='all', sharey='row', gridspec_kw={'hspace': 0, 'wspace': 0, 'height_ratios': [2, 1]}, figsize=[4.8*3,4.8*1.5], dpi=150)

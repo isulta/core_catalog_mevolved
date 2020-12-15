@@ -1,3 +1,5 @@
 12, 13, 14: fitting region {12:(rlim, 11.9), 13:(rlim, 12.5), 14:(rlim, 13.0), 100:(rlim, 13.0)} where rlim = np.log10(100*m_SV)
 
 12_smallfit, 13_smallfit, 14_smallfit: fitting region {12:(rlim, 11.9), 13:(rlim, 12.0), 14:(rlim, 12.0), 100:(rlim, 12.0)} where rlim = 11.2
+
+12_smallfit2, 13_smallfit2, 14_smallfit2: fitting region {12:(np.log10(OBJECTMASSCUT['SV']), 11.9), 13:(11.5, 12.5), 14:(11.35, 13.0), 100:(11.5, 13.0)} 

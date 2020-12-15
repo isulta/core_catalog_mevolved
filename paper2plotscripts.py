@@ -258,7 +258,7 @@ def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bin
         M1, M2 = M1dict[Mlabel], M2dict[Mlabel]
         _, _, _, _, nH_cores = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, mplot=mplot)
         x_sh, y_sh, yerr_sh, yerr_log_sh, nH_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=mlim, mplot=mplot)
-        assert nH_cores == nH_sh
+        assert nH_cores == nH_sh, 'nH_cores != nH_sh'
 
         Chi2 = np.empty((len(A_arr), len(zeta_arr)))
         for i, A in enumerate(A_arr):
@@ -266,7 +266,7 @@ def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bin
                 x, y, yerr, yerr_log, _ = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, A=A, zeta=zeta, verbose=False, mplot=mplot, nH_cores=nH_cores)
                 Chi2[i,j] = np.sum( (y_sh-y)**2/(yerr_log**2 + yerr_log_sh**2) ) if dlog else np.sum( (10**y_sh-10**y)**2/(yerr**2 + yerr_sh**2) )
         ReducedChi2 = np.true_divide(Chi2 , bins-2)
-        assert np.isfinite(ReducedChi2).all()
+        assert np.isfinite(ReducedChi2).all(), 'ReducedChi2 not finite'
         ReducedChi2dict[Mlabel] = ReducedChi2
         print('')
     return ReducedChi2dict

@@ -247,8 +247,8 @@ def cosmology_tests(cc_SV, centrals_mask_SV, cc_AQ, centrals_mask_AQ, r=(-4.0,0.
     #     ax.set_xlim(-4.1, -0.2) #CHANGE
 
 ### CHI-SQUARE FITTING ###
-def mask_ReducedChi2_gen(ReducedChi2):
-    return np.abs(ReducedChi2 - ReducedChi2.min())<=1
+def mask_ReducedChi2_gen(ReducedChi2, maxDelta):
+    return np.abs(ReducedChi2 - ReducedChi2.min()) <= maxDelta
 
 def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bins=20, mlim=0, mplot=False, dlog=False):
     ReducedChi2dict = {}
@@ -270,7 +270,7 @@ def ReducedChi2dict_gen(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bin
         print('')
     return ReducedChi2dict
 
-def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialparams, ReducedChi2_outline0, ReducedChi2_outline1):
+def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialparams, ReducedChi2_outline0, ReducedChi2_outline1, maxDelta):
     plt.figure()
     ax = plt.gca()
     plt.pcolormesh(zeta_arr, A_arr, ReducedChi2, cmap=plt.cm.jet, shading='nearest')
@@ -281,7 +281,7 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialpa
     Abf, zetabf =  A_arr[Abfi], zeta_arr[zetabfi]
     print('A', Abf, 'zeta', zetabf)
 
-    mask_ReducedChi2 = mask_ReducedChi2_gen(ReducedChi2)
+    mask_ReducedChi2 = mask_ReducedChi2_gen(ReducedChi2, maxDelta)
 
     plt.plot(zetabf, Abf, 'x', ms=10, zorder=5, c='w')
     if markfiducialparams:
@@ -292,7 +292,7 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialpa
 
     for ReducedChi2_outline, c_outln, hs, ls in zip((ReducedChi2_outline0, ReducedChi2_outline1), (COLOR_SCHEME[3],COLOR_SCHEME[-1]), ('///','\\\\\\'), ('-','--')):
         if ReducedChi2_outline is not None:
-            mask_ReducedChi2_outline = mask_ReducedChi2_gen(ReducedChi2_outline)
+            mask_ReducedChi2_outline = mask_ReducedChi2_gen(ReducedChi2_outline, maxDelta)
             ax.add_collection(LineCollection(binaryarray_outline(mask_ReducedChi2_outline, zeta_arr, A_arr), linewidths=1.5, colors=c_outln, linestyle=ls))
             # Hatch plot
             # plt.rcParams['hatch.color'] = '#808080'
@@ -322,15 +322,15 @@ def pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, outfile, avgchi2, markfiducialpa
     if outfile:
         plt.savefig(outfile)
 
-def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False, markfiducialparams=False, ReducedChi2dict_outline0=None, ReducedChi2dict_outline1=None):
+def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False, markfiducialparams=False, ReducedChi2dict_outline0=None, ReducedChi2dict_outline1=None, maxDelta=DELTACHIDOF2MAX):
     for Mlabel in sorted(M1dict.keys()):
         ReducedChi2 = ReducedChi2dict[Mlabel]
         M1, M2 = M1dict[Mlabel], M2dict[Mlabel]
         ReducedChi2_outline0 = ReducedChi2dict_outline0[Mlabel] if ReducedChi2dict_outline0 else None
         ReducedChi2_outline1 = ReducedChi2dict_outline1[Mlabel] if ReducedChi2dict_outline1 else None
-        pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, (f'{outfile}_{Mlabel}.pdf' if outfile else None), avgchi2, markfiducialparams, ReducedChi2_outline0, ReducedChi2_outline1)
+        pcolorplot_gen(ReducedChi2, Mlabel, M1, M2, (f'{outfile}_{Mlabel}.pdf' if outfile else None), avgchi2, markfiducialparams, ReducedChi2_outline0, ReducedChi2_outline1, maxDelta)
 
-def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2dict, bins=20, mlim=0, mplot=False, outfile=None, avgchi2=False, zlabel=None, fixedAxis=False, legendFlag=True, bfparamslabelFlag=False):
+def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2dict, bins=20, mlim=0, mplot=False, outfile=None, avgchi2=False, zlabel=None, fixedAxis=False, legendFlag=True, bfparamslabelFlag=False, maxDelta=DELTACHIDOF2MAX):
     alpha = 1.0
     fixedylim = {12:(-1.6, 0.0), 13:(-0.64, 0.83), 14:(-0.65, 1.8)} #verified min/max for z=0 and z=1
 
@@ -341,7 +341,7 @@ def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2
 
         x_sh, y_sh, yerr_sh, yerr_log_sh, nH_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=mlim, mplot=mplot)
 
-        Avals, zvals = np.unravel_index( np.flatnonzero(mask_ReducedChi2_gen(ReducedChi2)), ReducedChi2.shape )
+        Avals, zvals = np.unravel_index( np.flatnonzero(mask_ReducedChi2_gen(ReducedChi2, maxDelta)), ReducedChi2.shape )
         best_ys = np.zeros((len(Avals), bins), dtype=np.float64)
         print('len(Avals)', len(Avals))
         for i, (A, zeta) in enumerate(zip(A_arr[Avals], zeta_arr[zvals])):
@@ -355,7 +355,7 @@ def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2
         x, y, yerr, yerr_log, nH_cores = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, mplot=mplot, A=Abf, zeta=zetabf, verbose=True)
         assert nH_cores==nH_sh
 
-        ax.fill_between(x, np.amin(best_ys, axis=0), np.amax(best_ys, axis=0), label=(r'$\Delta \langle\chi^2_{\mathrm{dof}}\rangle \le 1$' if avgchi2 else r'$\Delta \chi^2_{\mathrm{dof}} \le 1$'), alpha=0.5, fc='b')
+        ax.fill_between(x, np.amin(best_ys, axis=0), np.amax(best_ys, axis=0), label=(r'$\Delta \langle\chi^2_{\mathrm{dof}}\rangle' if avgchi2 else r'$\Delta \chi^2_{\mathrm{dof}}')+f' \le {maxDelta}$', alpha=0.5, fc='b')
         errorbar(ax, x_sh, y_sh, yerr=yerr_log_sh, label='Subhalos', c='r', alpha=alpha, marker='s')
         errorbar(ax, x, y, yerr=yerr_log, label=r'Cores ($\min\left(\langle\chi_{\mathrm{dof}}^2\rangle\right)$ parameters)', c='k', alpha=alpha )
         

@@ -1,0 +1,3 @@
+12, 13, 14: fitting region {12:(rlim, 11.9), 13:(rlim, 12.5), 14:(rlim, 13.0), 100:(rlim, 13.0)} where rlim = np.log10(100*m_SV)
+
+12_smallfit, 13_smallfit, 14_smallfit: fitting region {12:(rlim, 11.9), 13:(rlim, 12.0), 14:(rlim, 12.0), 100:(rlim, 12.0)} where rlim = 11.2

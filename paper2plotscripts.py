@@ -333,7 +333,8 @@ def pcolorplots(ReducedChi2dict, M1dict, M2dict, outfile=None, avgchi2=False, ma
 
 def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2dict, bins=20, mlim=0, mplot=False, outfile=None, avgchi2=False, zlabel=None, fixedAxis=False, legendFlag=True, bfparamslabelFlag=False, maxDelta=DELTACHIDOF2MAX):
     alpha = 1.0
-    fixedylim = {12:(-1.6, 0.0), 13:(-0.64, 0.83), 14:(-0.65, 1.8)} #verified min/max for z=0 and z=1
+    # fixedylim = {12:(-1.6, 0.0), 13:(-0.64, 0.83), 14:(-0.65, 1.8)} #verified min/max for SV z=0 and z=1
+    fixedylim = {12:(-1.56, 0.0), 13:(-0.85, 0.84), 14:(-0.85, 1.71)} #verified min/max for HM z=0 and z=1
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3, sharex=False, sharey=False, gridspec_kw={'hspace': 0, 'wspace': .15}, figsize=[4.8*3,4.8*1], dpi=150)
     for Mlabel, ax in zip( (12, 13, 14), (ax1, ax2, ax3) ):
@@ -364,7 +365,8 @@ def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2
             ax.set_ylim(fixedylim[Mlabel])
         print('xlim: ', ax.get_xlim(), '\nylim: ', ax.get_ylim())
         print()
-        ax.set_title(r'{} $\le \log \left[ M / \left(h^{{-1}}M_\odot \right) \right] \le$ {}'.format(np.log10(M1), np.log10(M2)), y=0.05, x=0.5)
+        if not bfparamslabelFlag:
+            ax.set_title(r'{} $\le \log \left[ M / \left(h^{{-1}}M_\odot \right) \right] \le$ {}'.format(np.log10(M1), np.log10(M2)), y=0.05, x=0.5)
         
         if bfparamslabelFlag:
             ax.text(0.97, 0.97, r'$(\mathcal{A},\zeta)_{\min\left(\langle\chi_{\mathrm{dof}}^2\rangle\right)}=$'+f' ({Abf}, {zetabf})', transform=ax.transAxes, horizontalalignment='right', verticalalignment='top', fontsize=11)

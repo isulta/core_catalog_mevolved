@@ -360,7 +360,8 @@ def sigma1plots(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, ReducedChi2
         ax.fill_between(x, np.amin(best_ys, axis=0), np.amax(best_ys, axis=0), label=(r'$\Delta \langle\chi^2_{\mathrm{dof}}\rangle' if avgchi2 else r'$\Delta \chi^2_{\mathrm{dof}}')+f' \le {maxDelta}$', alpha=0.5, fc='b')
         errorbar(ax, x_sh, y_sh, yerr=yerr_log_sh, label='Subhalos', c='r', alpha=alpha, marker='s')
         errorbar(ax, x, y, yerr=yerr_log, label=r'Cores ($\min\left(\langle\chi_{\mathrm{dof}}^2\rangle\right)$ parameters)', c='k', alpha=alpha )
-        
+        print('y_sh', y_sh)
+        print('y', y)
         if fixedAxis:
             ax.set_ylim(fixedylim[Mlabel])
         print('xlim: ', ax.get_xlim(), '\nylim: ', ax.get_ylim())

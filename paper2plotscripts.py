@@ -752,3 +752,58 @@ def sh_finder_comparison(
     print('ax1 ylim', ax1.get_ylim())
     print('ax4 ylim', ax4.get_ylim())
     print('ax1 xlim', ax1.get_xlim())
+
+### high-z ###
+def ReducedChi2dict_gen_highz(cc, sh, centrals_mask, label, rdict, M1dict, M2dict, bins=20, mlim=0, mplot=False, dlog=False, zeta=ZETAFID):
+    ReducedChi2dict = {}
+    for Mlabel in sorted(rdict.keys()):
+        r = rdict[Mlabel]
+        M1, M2 = M1dict[Mlabel], M2dict[Mlabel]
+        _, _, _, _, nH_cores = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, mplot=mplot)
+        x_sh, y_sh, yerr_sh, yerr_log_sh, nH_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=mlim, mplot=mplot)
+        # assert nH_cores == nH_sh, 'nH_cores != nH_sh'
+        print(f'RELDIF: {reldif(nH_cores, nH_sh)*100.}% between nH_cores and nH_sh for Mlabel:{Mlabel}.')
+
+        Chi2 = np.empty(len(A_arr))
+        for i, A in enumerate(A_arr):
+            x, y, yerr, yerr_log, _ = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, A=A, zeta=zeta, verbose=False, mplot=mplot, nH_cores=nH_cores)
+            Chi2[i] = np.sum( (y_sh-y)**2/(yerr_log**2 + yerr_log_sh**2) ) if dlog else np.sum( (10**y_sh-10**y)**2/(yerr**2 + yerr_sh**2) )
+        ReducedChi2 = np.true_divide(Chi2 , bins-1)
+        assert np.isfinite(ReducedChi2).all(), 'ReducedChi2 not finite'
+        ReducedChi2dict[Mlabel] = ReducedChi2
+        print('')
+    return ReducedChi2dict
+
+def bestA_highz_gen(ReducedChi2_SV_highz):
+    bestA_arr = []
+    A_min_arr = []
+    A_max_arr = []
+    for i, ReducedChi2 in enumerate(ReducedChi2_SV_highz):
+        #loop over z=0 to z=len(ReducedChi2_SV_highz)-1
+        print(f'z={i}')
+        print(f'ReducedChi2.min: {ReducedChi2.min()}')
+        
+        bestA = A_arr[ReducedChi2.argmin()]
+        bestA_arr.append(bestA)
+        print(f'best A: {bestA}')
+
+        mask_ReducedChi2 = mask_ReducedChi2_gen(ReducedChi2, DELTACHIDOF2MAX)
+        idx_mask_ReducedChi2 = np.flatnonzero(mask_ReducedChi2)
+        assert np.array_equal(idx_mask_ReducedChi2[:-1]+1, idx_mask_ReducedChi2[1:]), 'All good A values are not contiguous in A_arr.'
+        
+        print(A_arr[mask_ReducedChi2])
+        A_min_arr.append(A_arr[mask_ReducedChi2].min())
+        A_max_arr.append(A_arr[mask_ReducedChi2].max())
+        
+        print()
+    
+    bestA_arr = np.array(bestA_arr)
+    A_min_arr = np.array(A_min_arr)
+    A_max_arr = np.array(A_max_arr)
+
+    A_min_arr = bestA_arr - A_min_arr
+    A_max_arr -= bestA_arr
+
+    redshift_arr = np.arange(len(ReducedChi2_SV_highz))
+
+    return redshift_arr, bestA_arr, np.array([A_min_arr, A_max_arr])

@@ -881,3 +881,53 @@ bins=40, ax_xlim=None, ax_ylim=None, draw_vline=True):
 
     if zlabel:
         axtop[0].text(r[0]+0.1,0.5,zlabel, fontsize=11)
+
+def highz_plot(cc, sh, centrals_mask, A=None, zeta=None, zlabel=None, r=(np.log10(OBJECTMASSCUT['SV']), 13.12), dlM=0.5, logMlist=(12, 13), mlim=OBJECTMASSCUT['SV'], bins=20, newlegend=True):
+    fig, (ax, ax1, ax2) = plt.subplots(3, sharex='all', sharey='row', gridspec_kw={'hspace': 0, 'wspace': 0, 'height_ratios': [4, 1, 1]}, figsize=[4.8*1,4.8*6/4], dpi=150)
+    label = 'SV'
+    ### new legend ###
+    if newlegend:
+        handles = []
+        handles.append(ax.errorbar([0], [0], [0], label=' ', marker='o', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[0])) #cores12
+        handles.append(ax.errorbar([0], [0], [0], label=' ', marker='o', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[1])) #sh12
+        handles.append(ax.errorbar([0], [0], [0], label='Cores', marker='D', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[2])) #cores13
+        handles.append(ax.errorbar([0], [0], [0], label='Subhalos', marker='D', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[3])) #sh13
+        legend1 = ax.legend(handles=handles, ncol=2, columnspacing=-1.2)
+
+        handles2 = []
+        handle2c = 'k'
+        handles2.append(ax.errorbar([0], [0], [0], label='[12.0, 12.5]', marker='o', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=handle2c))
+        handles2.append(ax.errorbar([0], [0], [0], label='[13.0, 13.5]', marker='D', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=handle2c))
+        ax.legend(handles=handles2, loc=4, title=r'$\log \left[M / \left(h^{{-1}}M_\odot \right) \right]\in$')#, prop={'size': 6})
+        ax.add_artist(legend1)
+    ### end new legend ###
+    for logM1, axr, marker, c_cores, c_sh in zip(logMlist, (ax1, ax2), ('o', 'D'), (COLOR_SCHEME[0], COLOR_SCHEME[2]), (COLOR_SCHEME[1], COLOR_SCHEME[3])):
+        M1, M2 = 10**logM1, 10**(logM1+dlM)
+
+        x, y, yerr, yerr_log, nH_cores, Mavg = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, returnMavg=True, mplot=True, A=A, zeta=zeta)
+        errorbar(ax, x, y, yerr=yerr_log, label=f'Cores {label} {logM1}', marker=marker, c=c_cores)
+
+        x_sh, y_sh, yerr_sh, yerr_log_sh, nH_sh, Mavg_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=mlim, returnMavg=True, mplot=True)
+        errorbar(ax, x_sh, y_sh, yerr=yerr_log_sh, label=f'Subhalos {label} {logM1}', marker=marker, c=c_sh)
+
+        print(reldif(Mavg, Mavg_sh)*100., 'percent relative difference between Mavg_cores and Mavh_sh')
+        print(f'RELDIF: {reldif(nH_cores, nH_sh)*100.}% between nH_cores and nH_sh for logM1:{logM1}.')
+
+            
+        errorbar(axr, x, 10**(y-y_sh), yerr=nratioerr(10**y, yerr, 10**y_sh, yerr_sh), marker=marker, c='k', zerocut=True)
+        axr.axhline(1, c='k',ls='--', lw=0.7, zorder=-1)
+        axr.set_ylim(0.5,1.49)
+        
+    ax.set_xlim((np.log10(OBJECTMASSCUT['SV']),13.12))
+    ax.set_ylim((-3.84,1.3011))
+    
+    # ax.legend(loc=3)
+
+    ax2.set_xlabel(r'$\log(m)$')
+    ax.set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m) \right]$')
+    
+    ax2.set_ylabel(r'CMF/SHMF')
+
+    zlabel += '\n\n$\mathcal{A}=$ '+str(A) + '\n$\zeta=$ '+str(zeta)
+    ax.text(r[0]+0.1,-3.4,zlabel, fontsize=11)
+    

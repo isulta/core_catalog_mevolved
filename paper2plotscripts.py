@@ -807,3 +807,77 @@ def bestA_highz_gen(ReducedChi2_SV_highz):
     redshift_arr = np.arange(len(ReducedChi2_SV_highz))
 
     return redshift_arr, bestA_arr, np.array([A_min_arr, A_max_arr])
+
+def resolution_tests_highz(cc_SV, sh_SV, centrals_mask_SV,
+mplot=False, A=None, zeta=None, ccMvar='M', fixedAxis=True, zlabel=None, smallRatioYaxis=False, assert_nH=True, r=None, dlM=0.5, logMlist=(12, 13, 14), mlim=SUBHALOMINMASS['SV'], 
+bins=40, ax_xlim=None, ax_ylim=None, draw_vline=True):
+    if r is None:
+        r = (9,13) if mplot else (-5,-0.5)
+
+    fig, (axtop,axlow) = plt.subplots(2, len(logMlist), sharex='all', sharey='row', gridspec_kw={'hspace': 0, 'wspace': 0, 'height_ratios': [2, 1]}, figsize=[4.8*len(logMlist),4.8*1.5], dpi=150)
+    for logM1, ax, axr in zip(logMlist, axtop, axlow):
+        yfid = 'SV'
+        yerrfid = None
+        M1, M2 = 10**logM1, 10**(logM1+dlM)
+        ax.set_title(r'{} $\le \log \left[ M / \left(h^{{-1}}M_\odot \right) \right] \le$ {}'.format(logM1+0.0, logM1+dlM), y=0.9)
+
+        for cc, sh, centrals_mask, label, marker, c in zip([cc_SV], [sh_SV], [centrals_mask_SV], ['SV'], ['o'], ['k']):
+            x, y, yerr, yerr_log, nH_cores, Mavg = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, returnMavg=True, mplot=mplot, A=A, zeta=zeta, Mvar=ccMvar)
+            errorbar(ax, x, y, yerr=yerr_log, label='Cores '+label, marker=marker)
+
+            x_sh, y_sh, yerr_sh, yerr_log_sh, nH_sh, Mavg_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=mlim, returnMavg=True, mplot=mplot)
+            errorbar(ax, x_sh, y_sh, yerr=yerr_log_sh, label='Subhalos '+label, marker=marker)
+
+            print(reldif(Mavg, Mavg_sh)*100., 'percent relative difference between Mavg_cores and Mavh_sh')
+
+            print('')
+            print(f'RELDIF: {reldif(nH_cores, nH_sh)*100.}%')
+            if (ccMvar!='Mtn') and assert_nH:
+                assert nH_cores == nH_sh
+
+            if yfid == label:
+                yfid = y_sh
+                yerrfid = yerr_sh
+
+            errorbar(axr, x, 10**(y-yfid), yerr=nratioerr(10**y, yerr, 10**yfid, yerrfid), marker=marker, c=c, zerocut=True)
+            axr.axhline(1, c='k',ls='--', lw=1, zorder=-1)
+
+            if mplot and draw_vline:
+                ax.axvline(  np.log10(100*PARTICLEMASS[label]), ymax=1., ls='--', c=c )
+                axr.axvline( np.log10(100*PARTICLEMASS[label]), ls='--', label=r'$\log \left(\mathrm{100m_{p,'+label+ r'}}\right)$', c=c )
+            elif label=='SV' and draw_vline:
+                print('SV lim:', np.log10(100*PARTICLEMASS[label]/Mavg_sh))
+                ax.axvline(  np.log10(100*PARTICLEMASS[label]/Mavg_sh), ymax=1., ls='--', c=c )
+                axr.axvline( np.log10(100*PARTICLEMASS[label]/Mavg_sh), ls='--', label=r'$\log \left(\mathrm{100m_{p,'+label+ r'}/\langle M \rangle}\right)$', c=c )
+        if ax_xlim:
+            ax.set_xlim(ax_xlim)
+        if ax_ylim:
+            ax.set_ylim(ax_ylim)
+        
+        if mplot and fixedAxis:
+            ax.set_ylim(-3,3.6) #CHANGE
+            ax.set_xlim(9,12.95)
+        elif fixedAxis: #finalized for res0,1 plots
+            ax.set_ylim(-2.3,3.8)
+            ax.set_xlim(-5,-0.5)
+
+        if smallRatioYaxis:
+            axr.set_ylim(0.0,1.95)
+    print('ax1 YLIM', axtop[0].get_ylim())
+    print('ax1 XLIM', axtop[0].get_xlim())
+    axtop[0].legend(loc=3)
+    axlow[0].legend(loc=2)
+    if mplot:
+        axlow[len(axlow)//2].set_xlabel(r'$\log(m)$')
+        if len(axlow)%2==0:
+            axlow[len(axlow)//2-1].set_xlabel(r'$\log(m)$')
+        axtop[0].set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m) \right]$')
+    else:
+        axlow[len(axlow)//2].set_xlabel(r'$\log(m/M)$')
+        if len(axlow)%2==0:
+            axlow[len(axlow)//2-1].set_xlabel(r'$\log(m/M)$')
+        axtop[0].set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m/M) \right]$')
+    axlow[0].set_ylabel(r'CMF/SHMF')
+
+    if zlabel:
+        axtop[0].text(r[0]+0.1,0.5,zlabel, fontsize=11)

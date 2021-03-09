@@ -882,7 +882,7 @@ bins=40, ax_xlim=None, ax_ylim=None, draw_vline=True):
     if zlabel:
         axtop[0].text(r[0]+0.1,0.5,zlabel, fontsize=11)
 
-def highz_plot(cc, sh, centrals_mask, A=None, zeta=None, zlabel=None, r=(np.log10(OBJECTMASSCUT['SV']), 13.12), dlM=0.5, logMlist=(12, 13), mlim=OBJECTMASSCUT['SV'], bins=20, newlegend=True):
+def highz_plot(cc, sh, centrals_mask, A=None, zeta=None, zlabel=None, r=(np.log10(OBJECTMASSCUT['SV']), 13.12), dlM=0.5, logMlist=(12, 13), mlim=OBJECTMASSCUT['SV'], bins=20, newlegend=True, ylabels=True):
     fig, (ax, ax1, ax2) = plt.subplots(3, sharex='all', sharey='row', gridspec_kw={'hspace': 0, 'wspace': 0, 'height_ratios': [4, 1, 1]}, figsize=[4.8*1,4.8*6/4], dpi=150)
     label = 'SV'
     ### new legend ###
@@ -924,9 +924,10 @@ def highz_plot(cc, sh, centrals_mask, A=None, zeta=None, zlabel=None, r=(np.log1
     # ax.legend(loc=3)
 
     ax2.set_xlabel(r'$\log(m)$')
-    ax.set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m) \right]$')
-    
-    ax2.set_ylabel(r'CMF/SHMF')
+
+    if ylabels:
+        ax.set_ylabel(r'$\log \left[ \mathrm{d}n/\mathrm{d} \log(m) \right]$')
+        ax2.set_ylabel(r'CMF/SHMF')
 
     zlabel += '\n\n$\mathcal{A}=$ '+str(A) + '\n$\zeta=$ '+str(zeta)
     ax.text(r[0]+0.1,-3.4,zlabel, fontsize=11)

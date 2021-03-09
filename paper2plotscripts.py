@@ -703,7 +703,7 @@ def M200_to_Mvir(M200, c200, SHMLM, z):
     return M200 * xvir**3 * SHMLM.delta_vir(z)/200
 
 def sh_finder_comparison(
-    sh_HM, sh_SV, sh_AQ, Mvar, setoriglims=True, computeRatioFromSHMF=False, addFiducialModels=False, addvlinelim=False, vlinepartlim=50., binwidth=0.5):
+    sh_HM, sh_SV, sh_AQ, Mvar, setoriglims=True, computeRatioFromSHMF=False, addFiducialModels=False, addvlinelim=False, vlinepartlim=50., binwidth=0.5, point_colors=COLOR_SCHEME[:3]):
     r = (-3,0)
     bins = 30
     alpha = 1.0
@@ -720,7 +720,7 @@ def sh_finder_comparison(
                 ax.legend(loc=3)
             else: 
                 ax.plot(np.linspace(*r, 100), fitting_model(np.linspace(*r, 100), logM1), '--', color='k', lw=1)
-        for sh, label, marker, c in zip([sh_HM, sh_SV, sh_AQ], ['HM', 'SV', 'AQ'], ['s', 'o', 'D'], COLOR_SCHEME[:3]):
+        for sh, label, marker, c in zip([sh_HM, sh_SV, sh_AQ], ['HM', 'SV', 'AQ'], ['s', 'o', 'D'], point_colors):
             x, y, yerr, yerr_log, nH_sh, Mavg_sh = subhalo_plot(sh, M1, M2, label, bins, r, mlim=SUBHALOMINMASS[label], Mvar=Mvar, returnMavg=True)
 
             errorbar(ax, x, y, yerr=yerr_log, label=f'Subhalos {label}', marker=marker, alpha=alpha, c=c)

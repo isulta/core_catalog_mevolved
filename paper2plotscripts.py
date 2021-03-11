@@ -882,26 +882,26 @@ bins=40, ax_xlim=None, ax_ylim=None, draw_vline=True):
     if zlabel:
         axtop[0].text(r[0]+0.1,0.5,zlabel, fontsize=11)
 
-def highz_plot(cc, sh, centrals_mask, A=None, zeta=None, zlabel=None, r=(np.log10(OBJECTMASSCUT['SV']), 13.12), dlM=0.5, logMlist=(12, 13), mlim=OBJECTMASSCUT['SV'], bins=20, newlegend=True, ylabels=True):
+def highz_plot(cc, sh, centrals_mask, A=None, zeta=None, zlabel=None, r=(np.log10(OBJECTMASSCUT['SV']), 13.12), dlM=0.5, logMlist=(12, 13), mlim=OBJECTMASSCUT['SV'], bins=20, newlegend=True, ylabels=True, markers=('o', 'D')):
     fig, (ax, ax1, ax2) = plt.subplots(3, sharex='all', sharey='row', gridspec_kw={'hspace': 0, 'wspace': 0, 'height_ratios': [4, 1, 1]}, figsize=[4.8*1,4.8*6/4], dpi=150)
     label = 'SV'
     ### new legend ###
     if newlegend:
         handles = []
-        handles.append(ax.errorbar([0], [0], [0], label=' ', marker='o', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[0])) #cores12
-        handles.append(ax.errorbar([0], [0], [0], label=' ', marker='o', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[1])) #sh12
-        handles.append(ax.errorbar([0], [0], [0], label='Cores', marker='D', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[2])) #cores13
-        handles.append(ax.errorbar([0], [0], [0], label='Subhalos', marker='D', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[3])) #sh13
+        handles.append(ax.errorbar([0], [0], [0], label=' ', marker=markers[0], ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[0])) #cores12
+        handles.append(ax.errorbar([0], [0], [0], label=' ', marker=markers[0], ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[1])) #sh12
+        handles.append(ax.errorbar([0], [0], [0], label='Cores', marker=markers[1], ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[2])) #cores13
+        handles.append(ax.errorbar([0], [0], [0], label='Subhalos', marker=markers[1], ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=COLOR_SCHEME[3])) #sh13
         legend1 = ax.legend(handles=handles, ncol=2, columnspacing=-1.2)
 
         handles2 = []
         handle2c = 'k'
-        handles2.append(ax.errorbar([0], [0], [0], label='[12.0, 12.5]', marker='o', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=handle2c))
-        handles2.append(ax.errorbar([0], [0], [0], label='[13.0, 13.5]', marker='D', ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=handle2c))
+        handles2.append(ax.errorbar([0], [0], [0], label='[12.0, 12.5]', marker=markers[0], ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=handle2c))
+        handles2.append(ax.errorbar([0], [0], [0], label='[13.0, 13.5]', marker=markers[1], ls='', mec='k', alpha=1, mew=0.5, ms=20**0.5, capsize=4, elinewidth=1.5, c=handle2c))
         ax.legend(handles=handles2, loc=4, title=r'$\log \left[M / \left(h^{{-1}}M_\odot \right) \right]\in$')#, prop={'size': 6})
         ax.add_artist(legend1)
     ### end new legend ###
-    for logM1, axr, marker, c_cores, c_sh in zip(logMlist, (ax1, ax2), ('o', 'D'), (COLOR_SCHEME[0], COLOR_SCHEME[2]), (COLOR_SCHEME[1], COLOR_SCHEME[3])):
+    for logM1, axr, marker, c_cores, c_sh in zip(logMlist, (ax1, ax2), (markers[0], markers[1]), (COLOR_SCHEME[0], COLOR_SCHEME[2]), (COLOR_SCHEME[1], COLOR_SCHEME[3])):
         M1, M2 = 10**logM1, 10**(logM1+dlM)
 
         x, y, yerr, yerr_log, nH_cores, Mavg = cores_plot(cc, centrals_mask, M1, M2, label, bins, r, mlim=mlim, returnMavg=True, mplot=True, A=A, zeta=zeta)

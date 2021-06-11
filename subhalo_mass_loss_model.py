@@ -43,7 +43,7 @@ from astropy import cosmology
 from astropy.cosmology import FlatLambdaCDM
 cosmoFLCDM = FlatLambdaCDM(H0=71, Om0=0.265, Tcmb0=0, Neff=3.04, m_nu=None, Ob0=0.0448)
 
-steps = sorted([int(i.split('.')[2]) for i in os.listdir(cc_data_dir) if '#' not in i])
+steps=[]#steps = sorted([int(i.split('.')[2]) for i in os.listdir(cc_data_dir) if '#' not in i])
 step2z = {}
 step2lookback = {} #in h^-1 Gyr
 for step in steps:
